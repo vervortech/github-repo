@@ -4,29 +4,27 @@ info:
   description: ''
   version: 1.0.0
 tags:
-  - name: Hotel Mapping
   - name: Hotel Mapping/Metadata Content
-  - name: Hotel Mapping/Mappings
-  - name: Hotel Mapping/Curated Content
-  - name: Hotel Mapping/Provider Content
-  - name: Hotel Mapping/Location Content
-  - name: Hotel Mapping/Operational APIs
-  - name: Hotel Mapping/Dynamic Mapping APIs
-  - name: Hotel Mapping/Dual Mapping APIs
-  - name: Room Mapping
-  - name: Room Mapping/Mapping API
-  - name: Room Mapping/Async Room Mapping API
-  - name: Room Mapping/Board Basis Mappings
   - name: Metadata Content
+  - name: Hotel Mapping/Mappings
   - name: Mappings
+  - name: Hotel Mapping/Curated Content
   - name: Curated Content
+  - name: Hotel Mapping/Provider Content
   - name: Provider Content
+  - name: Hotel Mapping/Location Content
   - name: Location
+  - name: Hotel Mapping/Operational APIs
   - name: Operational APIs
+  - name: Hotel Mapping/Dynamic Mapping APIs
   - name: Dynamic Mapping APIs
+  - name: Hotel Mapping/Dual Mapping APIs
   - name: Dual Mapping APIs
+  - name: Room Mapping/Mapping API
   - name: Room Mapping APIs
+  - name: Room Mapping/Async Room Mapping API
   - name: Async Room Mapping API
+  - name: Room Mapping/Board Basis Mappings
 paths:
   /content/GetMasterHotelFacilityGroups:
     get:
@@ -3029,95 +3027,249 @@ paths:
     get:
       summary: Start Mapping By Ftp Folder
       deprecated: false
-      description: >
-        Exports all the mappings associated to the given account in the .csv
-        format and the file is sent to you by email.
+      description: >+
 
-        The associated files will be uploaded into your ftp account. The files
-        can be accessed by ftp credentials, which is already been shared during
-        the signup process.
+        Please follow the following steps in sequence
 
-         #### File description:
-         When this API is requested by the client the following files are generated -:
-         1) Mapping File.
-           This file contains mapping information in your account corresponding to each provider. The file name convention is -: accountname_mappings_guid.csv
-         * Following are the columns included in the template:
 
-             * UnicaId: The name of the provider providing that hotel. This must be from the master Vervotech Mappings master provider names
-             * ProviderHotelId: This would be the property's ID, provided by the provider.
-             * ProviderFamily: Name of the provider.            
-             * ModifiedOn: Date of the mapping when updated.          
-             * ChannelIds: ChannelName.Rate plan type for the provider.     
-             * ProviderLocationid: DestinationCode for providerHotelId grouped under unicaId.
-             * Please refer the mapping file template here,
-        <div align="right">
+        ### Step 1 - Prepare hotel content files:
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/accountname_mappings_f8b3216d-f558-4398-a498-9f279b76a625.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>
 
-        </div>
-         2) Mapping File(New format).
-           This file contains mapping information in new csv format to each provider. The file name convention is -: accountname_transformed_guid.csv
-         * Following are the columns included in the template:
-
-             * UnicaId: Unique Vervotech hotel Id
-             * Provider Name: This would be the property Id provided by the provider which exist in that vervotech Id group.
-             * Please refer the mapping file template in new format here,
+        1. Please refer the content hotel static content file template here:
 
         <div align="right">
+          <a href="https://hotelmapping.vervotech.com/documentation/unica-mapping-content-template.csv">
+            <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15" />
+          </a>
+        </div> 
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/accountname_transformed_mappings_f8b3216d-f558-4398-a498-9f279b76a625.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>
 
-        </div>
+        2. The file extension must be .csv.
 
-         3) Content File.
-           This file contains mapping information in new csv format to each provider. The file name convention is -: accountname_hotels_guid.csv
-         * Following are the columns included in the template:
 
-             * UnicaId: Unique Id for each group of similar hotels.
-             * HotelName: Name of the property.
-             * Lat: Latitude of the property.
-             * Long: Longitude of the property.
-             * ChainCode: Optional. Information about the chain code.
-             * AddressLine1 : Property's address line 1. 
-             * AddressLine2 : Property's address line 2.
-             * City : Name of the city where the property is located.
-             * State: Name of the state where the property is located.
-             * StateCode :  Code of the state where the property is located.
-             * CountryName: Name of the country where the property is located. Either one of the CountryName and CountryCode is sufficient.
-             * CountryCode : ISO country code where the property is located.
-             * PostalCode:  Zipcode of the property.
-             * StarRating: Star ratings of the property.
-             * PropertyType: Hotel property type. Eg: - Motel, Resort, Villa, etc.
-             * ChainName: Information about the chain name.
-             * BrandName: Information about the brand name.
-             * CityLocationId: Master city location id associated with this property.
-             * MasterCityName: MasterCityLocationName is the cityname associated with city location id.
-             * LocationIds: Master location ids associated with this property.
-             * Phones: Property's phone numbers.
-             * Fax: Property's fax number.
-             * Email: Property's email address.
-             * Website: Property's official website address.
-             * AirportCodes: List of Airports nearby the hotel.
-             * TrainStations: List of TrainStations nearby the hotel.
-             * ProviderHotelId: Provider hotel id.
-             * ProviderFamily: Name of hotel provider.
-             * GooglePlusCode: GooglePlusCode is the unique code for the property.
-             * Please refer the curated content file template here,
-        <div align="right">
+        3. All the columns from the content template file must be present in
+        your content file.
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/accountname_hotels_f8b3216d-f558-4398-a498-9f279b76a625.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>     
 
-        </div>
-             
+        4. Create separate .csv file for each provider.
+
+
+        5. Make sure the column names in your content file are matching exactly
+        with the column names in Vervotech Mappings content template file.
+
+
+        6. The column names are case sensitive.
+
+
+        7. Make sure there are no invalid/junk values like for any of the
+        content fields. For example, "NULL", "null", " " etc.
+
+
+        Following are the columns included in the template:
+
+
+        - **SupplierName:** Required. The name of the provider providing that
+        hotel. This must be from the master Vervotech Mappings master provider
+        names:
+        [GetAllProviderNames](https://docs.vervotech.com/get-all-provider-names-16383705e0)
+
+
+        - **SupplierHotelId:** Required. This would be the property's ID,
+        provided to you by the provider.
+
+
+        - **HotelName:** Required. Name of the property.
+
+
+        - **Line1:** Required. Property's address line 1.
+
+
+        - **Line2:** Property's address line 2.
+
+
+        - **CityName:** Required. Name of the city where the property is
+        located.
+
+
+        - **CityCode:** Optional. Code for the city/location where the property
+        is located.
+
+
+        - **StateName:** Name of the state where the property is located.
+
+
+        - **StateCode:** Code of the state where the property is located.
+
+
+        - **ZipCode:** Required. Zip code of the property.
+
+
+        - **CountryName:** Either one of CountryName or CountryCode is required.
+        Name of the country where the property is located. Either one of the
+        CountryName and CountryCode is sufficient.
+
+
+        - **CountryCode:** Either one of CountryName or CountryCode is required.
+        ISO country code where the property is located.
+
+
+        - **StarRating:** Required. Star ratings of the property.
+
+
+        - **Lat:** Required. Latitude of the property.
+
+
+        - **Long:** Required. Longitude of the property
+
+
+        - **ChainCode:** Optional. Information about the chain code.
+
+
+        - **Phones:** Property's phone numbers.
+
+
+        - **Fax:** Property's fax number.
+
+
+        - **Email:** Property's email address.
+
+
+        - **Website:** Property's official website address.
+
+
+        - **PropertyType:** Hotel property type. E.g.: - Motel, Resort, Villa,
+        etc.
+
+
+        ---
+
+
+        ### Step 2 - Upload the hotel content files to SFTP site:
+
+
+        #### Step 2.1: Connect to the SFTP server.
+
+
+        Connect to the FTP site using any FTP client. You can get the FTP
+        credentials from Vervotech client portal under "Load Provider Content".
+
+
+
+        ![ShowFTPCredentials.PNG](https://api.apidog.com/api/v1/projects/898598/resources/369085/image-preview)
+
+        #### Step 2.2: Create folder path for files.
+
+
+        Create new folders at the root of the FTP site. You can tools like
+        FileZilla or any other SFTP client. Alternatively, you can use any
+        programming client.
+
+
+        The directory path of the folder should be in following format:
+
+
+        **[FTP Root]/[DATE]/[ProviderName]/[ProviderKey]**
+
+
+        FTP Folder path essentially has 3 components:
+
+
+        1. **Date:** The [DATE] format should be DDMMYYYY.
+
+
+        2. **ProviderName:** The name of the provider. This must be one of the
+        provider name from the master Vervotech Mappings master provider names: 
+        [GetAllProviderNames](https://docs.vervotech.com/get-all-provider-names-16383705e0)
+
+           If the provider name is not present in the master provider list, please contact Vervotech Mappings support team at [Vervotech Support](https://support.vervotech.com/support/tickets)
+
+        3. **ProviderKey:** This will be provided by the Vervotech Mappings team
+        for each provider. You can get the FTP credentials from Vervotech client
+        portal under "Manage Your Providers" tab as shown below.
+
+          ![ProviderKey.PNG](https://api.apidog.com/api/v1/projects/898598/resources/369083/image-preview)
+
+        #### Step 2.3: Upload the file to SFTP server
+
+
+        You can upload multiple provider files in single SFTP folder. The
+        provider file name can be in any format. However, we recommend placing
+        only one file per folder.
+
+
+        **Examples:**
+
+        ```
+
+        18122022/HotelBeds/accountId__accountId__HotelBeds/HotelBedsProperties.csv
+
+        18122022/Priceline/accountId__accountId__Priceline/PricelineProperties.csv
+
+        18122022/EAN/accountId__accountId__EAN/EANProperties.csv
+
+        ```
+
+
+        ---
+
+
+        ### Step 3 - Trigger the hotel mapping using Client Portal:
+
+
+        1. Login to Vervotech Mappings client portal.
+
+
+        2. Go to "Load Provider Content" in the navigation pane.
+
+
+        3. Enter the full FTP path URL in the "SFTP Folder Path" text box.
+
+
+        4. Click on the "Start Mapping" button. You should see multiple unique
+        identifier/number (RunId) on the screen for your mapping request. There
+        will be unique RunId generated for each file from your upload directory.
+
+
+        5. The processing of the file must be completed before uploading any new
+        files.
+
+
+        ---
+
+
+        ### Step 4 - Review mapping progress for your files:
+
+
+        You can check the status of any of the mapping against any RunId which
+        you have triggered. Go to "Providers Content Processing" and see the
+        progress of any RunId.
+
+
+        ---
+
+
+        ### Step 5 - Trigger the hotel mapping using APIs:
+
+
+        1. The entire process of uploading the files can be automated
+        programtically using SFTP client.
+
+
+        2. Once the files are uploaded, integrate with
+        https://hotelmapping.vervotech.com/api/3.0/mappings/StartMappingByFtpFolder.
+
+
+        3. The input to this web service is mainly the FTP upload directory
+        path.
+
+
+        4. Trigger the hotel mapping request by invoking this web service.
+
+
+        ---
+
+
+
       operationId: mappings/Start Mapping By Ftp Folder
       tags:
         - Hotel Mapping/Operational APIs
@@ -4513,7 +4665,6 @@ paths:
           text/plain:
             schema:
               type: string
-            examples: {}
         required: true
       responses:
         '200':
@@ -4522,101 +4673,104 @@ paths:
             application/json:
               schema:
                 type: object
-                properties:
-                  meta:
-                    type: object
-                    properties:
-                      lastUpdated:
-                        type: string
-                      totalStandards:
-                        type: integer
-                    required:
-                      - lastUpdated
-                      - totalStandards
-                  standards:
-                    type: object
-                    properties:
-                      bb:
-                        type: object
-                        properties:
-                          code:
-                            type: string
-                          standardName:
-                            type: string
-                          description:
-                            type: string
-                          aliases:
-                            type: array
-                            items:
-                              type: string
-                          includedMeals:
-                            type: array
-                            items:
-                              type: string
-                        required:
-                          - code
-                          - standardName
-                          - description
-                          - aliases
-                          - includedMeals
-                      hb:
-                        type: object
-                        properties:
-                          code:
-                            type: string
-                          standardName:
-                            type: string
-                          description:
-                            type: string
-                          aliases:
-                            type: array
-                            items:
-                              type: string
-                          includedMeals:
-                            type: array
-                            items:
-                              type: string
-                        required:
-                          - code
-                          - standardName
-                          - description
-                          - aliases
-                          - includedMeals
-                      unknown:
-                        type: object
-                        properties:
-                          code:
-                            type: string
-                          standardName:
-                            type: string
-                          description:
-                            type: string
-                          aliases:
-                            type: array
-                            items:
-                              type: string
-                        required:
-                          - code
-                          - standardName
-                          - description
-                          - aliases
-                    required:
-                      - bb
-                      - hb
-                      - unknown
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  statusCode:
-                    type: integer
                 required:
                   - meta
                   - standards
                   - success
                   - message
                   - statusCode
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  statusCode:
+                    type: integer
+                  meta:
+                    type: object
+                    required:
+                      - lastUpdated
+                      - totalStandards
+                    properties:
+                      lastUpdated:
+                        type: string
+                      totalStandards:
+                        type: integer
+                  standards:
+                    type: object
+                    required:
+                      - bb
+                      - hb
+                      - unknown
+                    properties:
+                      unknown:
+                        type: object
+                        required:
+                          - code
+                          - standardName
+                          - description
+                          - aliases
+                        properties:
+                          code:
+                            type: string
+                          standardName:
+                            type: string
+                          description:
+                            type: string
+                          aliases:
+                            type: array
+                            items:
+                              type: string
+                      bb:
+                        type: object
+                        required:
+                          - code
+                          - standardName
+                          - description
+                          - aliases
+                          - includedMeals
+                        properties:
+                          code:
+                            type: string
+                          standardName:
+                            type: string
+                          description:
+                            type: string
+                          aliases:
+                            type: array
+                            items:
+                              type: string
+                          includedMeals:
+                            type: array
+                            items:
+                              type: string
+                      hb:
+                        type: object
+                        required:
+                          - code
+                          - standardName
+                          - description
+                          - aliases
+                          - includedMeals
+                        properties:
+                          code:
+                            type: string
+                          standardName:
+                            type: string
+                          description:
+                            type: string
+                          aliases:
+                            type: array
+                            items:
+                              type: string
+                          includedMeals:
+                            type: array
+                            items:
+                              type: string
               example:
+                success: true
+                message: Success
+                statusCode: 1000
                 meta:
                   lastUpdated: '2025-12-01T06:13:53.945Z'
                   totalStandards: 3
@@ -4644,9 +4798,7 @@ paths:
                       Board basis could not be determined. Please review these
                       terms.
                     aliases: []
-                success: true
-                message: Success
-                statusCode: 1000
+          headers: {}
       security: []
   /api/2.0/Mapping/map-board-basis:
     post:
@@ -4697,13 +4849,13 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - boardBasis
               properties:
                 boardBasis:
                   type: array
                   items:
                     type: string
-              required:
-                - boardBasis
             example:
               boardBasis:
                 - Continental Breakfast
@@ -4717,6 +4869,12 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - success
+                  - statusCode
+                  - message
+                  - meta
+                  - mappings
                 properties:
                   success:
                     type: boolean
@@ -4726,6 +4884,14 @@ paths:
                     type: string
                   meta:
                     type: object
+                    required:
+                      - lastUpdated
+                      - totalInputTerms
+                      - uniqueInputTerms
+                      - totalMatched
+                      - totalUnknown
+                      - needsReview
+                      - matchRate
                     properties:
                       lastUpdated:
                         type: string
@@ -4741,18 +4907,14 @@ paths:
                         type: boolean
                       matchRate:
                         type: string
-                    required:
-                      - lastUpdated
-                      - totalInputTerms
-                      - uniqueInputTerms
-                      - totalMatched
-                      - totalUnknown
-                      - needsReview
-                      - matchRate
                   mappings:
                     type: array
                     items:
                       type: object
+                      required:
+                        - supplierTerm
+                        - standardCode
+                        - standardName
                       properties:
                         supplierTerm:
                           type: string
@@ -4760,16 +4922,6 @@ paths:
                           type: string
                         standardName:
                           type: string
-                      required:
-                        - supplierTerm
-                        - standardCode
-                        - standardName
-                required:
-                  - success
-                  - statusCode
-                  - message
-                  - meta
-                  - mappings
               example:
                 success: true
                 statusCode: 1000
@@ -5347,7 +5499,7 @@ components:
             $ref: >-
               #/components/schemas/Unica.DataContracts.MasterLocation.MasterLocation
           nullable: true
-    GetMasterHotelBrandsResponse1: &ref_10
+    GetMasterHotelBrandsResponse1: &ref_3
       $ref: '#/components/schemas/GetMasterHotelBrandsResponse'
     CuratedHotels:
       type: array
@@ -5754,7 +5906,7 @@ components:
         statusCode:
           type: integer
           format: int32
-    GetMasterPropertyTypesResponse2: &ref_11
+    GetMasterPropertyTypesResponse2: &ref_4
       $ref: '#/components/schemas/GetMasterPropertyTypesResponse'
     CuratedHotelsWithLocationContent:
       type: array
@@ -6021,7 +6173,7 @@ components:
         name:
           type: string
           nullable: true
-    GetMasterCountriesResponse3: &ref_12
+    GetMasterCountriesResponse3: &ref_5
       $ref: '#/components/schemas/GetMasterCountriesResponse'
     ReviewHotels:
       type: array
@@ -6070,7 +6222,7 @@ components:
         statusCode:
           type: integer
           format: int32
-    FacilityGroupFixtures4: &ref_13
+    FacilityGroupFixtures4: &ref_6
       $ref: '#/components/schemas/FacilityGroupFixtures'
     ProviderMappingsStats:
       type: array
@@ -6114,7 +6266,7 @@ components:
           type: string
           description: Name of the facility.
           example: WiFi
-    Unica.Core.Contracts.Models.Bed: &ref_5
+    Unica.Core.Contracts.Models.Bed: &ref_10
       type: object
       additionalProperties: false
       properties:
@@ -6133,7 +6285,7 @@ components:
         count:
           type: integer
           format: int32
-    GetMasterHotelChainsResponse5: &ref_14
+    GetMasterHotelChainsResponse5: &ref_8
       $ref: '#/components/schemas/GetMasterHotelChainsResponse'
     MappingsStats:
       type: object
@@ -7041,7 +7193,7 @@ components:
                     attributes:
                       - key: RoomSize
                         value: 200-250 SQFT
-    Unica.Core.Contracts.Models.Facility: &ref_6
+    Unica.Core.Contracts.Models.Facility: &ref_11
       type: object
       additionalProperties: false
       properties:
@@ -7539,6 +7691,7 @@ components:
         - Facilities
         - Policies
         - PointOfInterests
+    GetMasterHotelBrandsResponse2: *ref_3
     NearByLocation:
       type: object
       description: Location Details.
@@ -7585,6 +7738,7 @@ components:
           items:
             type: string
           nullable: true
+    GetMasterPropertyTypesResponse3: *ref_4
     TrainStations:
       type: object
       description: TrainStation Details.
@@ -7772,6 +7926,7 @@ components:
           items:
             type: string
           nullable: true
+    GetMasterCountriesResponse4: *ref_5
     PointOfInterests:
       type: object
       description: PointOfInterests Details.
@@ -7788,7 +7943,7 @@ components:
           type: string
           description: PointOfInterest Name.
           example: Club de Golf Colonial
-    PropertyContent400Error: &ref_3
+    PropertyContent400Error: &ref_7
       $ref: '#/components/schemas/Error'
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetCuratedContentByVervotechIdsReq:
       type: object
@@ -7800,6 +7955,7 @@ components:
             type: integer
             format: int32
           nullable: true
+    FacilityGroupFixtures5: *ref_6
     ConnectedLocations:
       type: object
       description: ConnectedLocations Details.
@@ -7816,7 +7972,7 @@ components:
           type: string
           description: ConnectedLocation Name.
           example: Victoriaville
-    PropertyContent404Error: *ref_3
+    PropertyContent404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetCuratedContentWithLocationRes:
       type: object
       additionalProperties: false
@@ -7835,6 +7991,7 @@ components:
             $ref: >-
               #/components/schemas/Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.CuratedHotelWithLocationMapping
           nullable: true
+    GetMasterHotelChainsResponse6: *ref_8
     Neighbourhoods:
       type: object
       description: Neighbourhoods Details.
@@ -7851,7 +8008,7 @@ components:
           type: string
           description: Neighbourhood Name.
           example: Nuussuaq
-    HotelChain404Error: *ref_3
+    HotelChain404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetMappingByProviderRes:
       type: object
       additionalProperties: false
@@ -7886,7 +8043,7 @@ components:
           type: string
           description: Stadium Name.
           example: Ladd-Peebles Stadium
-    MasterCountry404Error: *ref_3
+    MasterCountry404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetMappingsRes:
       type: object
       additionalProperties: false
@@ -7950,7 +8107,7 @@ components:
           type: string
           description: Source of the Location content.
           example: Location Content Provider
-    BucketFolderNotFound: *ref_3
+    BucketFolderNotFound: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetMasterFacilityGroups:
       type: object
       additionalProperties: false
@@ -7981,7 +8138,7 @@ components:
         StatusCode:
           description: '[References - API Status codes](#tag/References)'
           example: 2000
-    ProviderNames404Error: *ref_3
+    ProviderNames404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetOSMLocationsRQ:
       type: object
       additionalProperties: false
@@ -8014,7 +8171,7 @@ components:
             type: number
             description: Code used for identifying Master Hotel Chains.
             example: 12
-    PropertyType404Error: *ref_3
+    PropertyType404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetProviderContentByProviderIdsReq:
       type: object
       additionalProperties: false
@@ -8043,7 +8200,7 @@ components:
         StatusCode:
           description: '[References - API Status codes](#tag/References)'
           example: 2000
-    Error401: *ref_3
+    Error401: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetProviderContentByVervotechIdsReq:
       type: object
       additionalProperties: false
@@ -8076,7 +8233,7 @@ components:
       items:
         type: string
         example: Resorts
-    Error403: *ref_3
+    Error403: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetProviderContentRes:
       type: object
       additionalProperties: false
@@ -8107,8 +8264,8 @@ components:
         StatusCode:
           description: '[References - API Status codes](#tag/References)'
           example: 2000
-    Error426: *ref_3
-    Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUnmappedProviderHotelsReq: &ref_4
+    Error426: *ref_7
+    Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUnmappedProviderHotelsReq: &ref_9
       type: object
       additionalProperties: false
       properties:
@@ -8128,7 +8285,7 @@ components:
       example:
         BR: Brazil
         IN: India
-    Error500: *ref_3
+    Error500: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUnmappedProviderHotelsRes:
       type: object
       additionalProperties: false
@@ -8212,8 +8369,8 @@ components:
               type: string
               description: Room area details.
               example: ''
-    Error503: *ref_3
-    Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUnmappedProviderHotelsV2Req: *ref_4
+    Error503: *ref_7
+    Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUnmappedProviderHotelsV2Req: *ref_9
     Locations:
       type: array
       description: Get master locations list.
@@ -8273,7 +8430,7 @@ components:
               Long:
                 type: number
                 description: Longitude
-    Facility404Error: *ref_3
+    Facility404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUnmappedProviderHotelsV2Res:
       type: object
       additionalProperties: false
@@ -8305,7 +8462,7 @@ components:
         null it means there are no further records available to fetch. ResumeKey
         has an expiry duration of 14 days.
       example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
-    TotalHotelsCount404Error: *ref_3
+    TotalHotelsCount404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.GetUpdatedCuratedContentRes:
       type: object
       additionalProperties: false
@@ -8481,7 +8638,7 @@ components:
           items:
             type: string
             example: abc@gmail.com
-    Location404Error: *ref_3
+    Location404Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.HotelProviderIdentifierV3:
       type: object
       additionalProperties: false
@@ -8609,7 +8766,7 @@ components:
               description: displays locationIds for the hotel if available.
               items:
                 type: string
-    Location400Error: *ref_3
+    Location400Error: *ref_7
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.MasterFacilityGroups:
       type: object
       additionalProperties: false
@@ -8806,7 +8963,7 @@ components:
           items:
             type: string
           nullable: true
-    Unica.Core.Contracts.Models.ImageSize: &ref_7
+    Unica.Core.Contracts.Models.ImageSize: &ref_12
       type: string
       enum:
         - Unknown
@@ -8814,7 +8971,7 @@ components:
         - Standard
         - XL
         - XXL
-    Unica.Core.Contracts.Models.KeyValue: &ref_8
+    Unica.Core.Contracts.Models.KeyValue: &ref_13
       type: object
       additionalProperties: false
       properties:
@@ -9315,7 +9472,7 @@ components:
           items:
             type: string
           nullable: true
-    Unica.Core.Contracts.Models.RoomArea: &ref_9
+    Unica.Core.Contracts.Models.RoomArea: &ref_14
       type: object
       additionalProperties: false
       properties:
@@ -9391,7 +9548,7 @@ components:
         postalCode:
           type: string
           nullable: true
-    Unica.DataContracts.Common.Bed: *ref_5
+    Unica.DataContracts.Common.Bed: *ref_10
     Unica.DataContracts.Common.CategoryRating:
       type: object
       additionalProperties: false
@@ -9471,7 +9628,7 @@ components:
         - Km
         - Miles
         - Meters
-    Unica.DataContracts.Common.Facility: *ref_6
+    Unica.DataContracts.Common.Facility: *ref_11
     Unica.DataContracts.Common.Fee:
       type: object
       additionalProperties: false
@@ -9553,8 +9710,8 @@ components:
           items:
             type: string
           nullable: true
-    Unica.DataContracts.Common.ImageSize: *ref_7
-    Unica.DataContracts.Common.KeyValue: *ref_8
+    Unica.DataContracts.Common.ImageSize: *ref_12
+    Unica.DataContracts.Common.KeyValue: *ref_13
     Unica.DataContracts.Common.Link:
       type: object
       additionalProperties: false
@@ -9657,7 +9814,7 @@ components:
           items:
             type: string
           nullable: true
-    Unica.DataContracts.Common.RoomArea: *ref_9
+    Unica.DataContracts.Common.RoomArea: *ref_14
     Unica.DataContracts.Common.Statistics:
       type: object
       additionalProperties: false
@@ -9998,14 +10155,12 @@ components:
           items:
             type: string
           nullable: true
-    GetMasterHotelBrandsResponse2: *ref_10
-    GetMasterPropertyTypesResponse3: *ref_11
-    GetMasterCountriesResponse4: *ref_12
-    FacilityGroupFixtures5: *ref_13
-    GetMasterHotelChainsResponse6: *ref_14
+    GetMasterHotelBrandsResponse3: *ref_3
+    GetMasterPropertyTypesResponse4: *ref_4
+    GetMasterCountriesResponse5: *ref_5
+    FacilityGroupFixtures6: *ref_6
+    GetMasterHotelChainsResponse7: *ref_8
   responses: {}
   securitySchemes: {}
-servers:
-  - url: https://hotelmapping.vervotech.com/api/3.0
-    description: Prod Env
+servers: []
 security: []
