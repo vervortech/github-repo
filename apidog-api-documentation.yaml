@@ -3993,7 +3993,6 @@ paths:
                   provider: HotelBeds
                   providerHotelId: '18113069'
                   view: Sea View
-                  smokingAllowed: Allowed
                   nightlyPrice: 80
                   currency: USD
                   boardBasis: Full board
@@ -4013,7 +4012,6 @@ paths:
                   provider: HotelBeds
                   providerHotelId: '18113069'
                   view: Sea View
-                  smokingAllowed: Allowed
                   nightlyPrice: 80
                   currency: USD
                   boardBasis: Breakfast
@@ -4033,7 +4031,6 @@ paths:
                   provider: HotelBeds
                   providerHotelId: '18113069'
                   view: Sea View
-                  smokingAllowed: Allowed
                   nightlyPrice: 80
                   currency: USD
                   boardBasis: ''
@@ -4046,6 +4043,19 @@ paths:
                   attributes:
                     - key: HasBalcony
                       value: 'Yes'
+                - index: 4
+                  code: '3'
+                  roomName: "Habitación deluxe con balcón y vista al mar"
+                  description: null
+                  provider: DidaTravel
+                  providerHotelId: '561233'
+                  beds: null
+                  view: null
+                  nightlyPrice: null
+                  currency: null
+                  attributes: null
+                  boardBasis: null
+                  refundability: Refundable
       responses:
         '200':
           description: Room Mapping Response
@@ -4216,6 +4226,28 @@ paths:
                         isDefault: false
                         matchScore: 97
                         cfs: 97
+                        attributes: []
+                  - standardName: Deluxe, Balcony, Sea View
+                    category: Deluxe
+                    view: Sea
+                    bedInfo: Unknown
+                    beds: []
+                    attributes: []
+                    warnings:
+                      - code: NON_ENGLISH_ROOM_NAME
+                        message: >-
+                          The room name is in a non-English language
+                          ("Habitación deluxe con balcón y vista al mar").
+                          Mapping accuracy may be reduced. Please provide room
+                          names in English for best results.
+                    mappedRoomRates:
+                      - inputIndex: 4
+                        roomCode: '3'
+                        boardBasis: Unknown
+                        refundability: Refundable
+                        isDefault: false
+                        matchScore: 45
+                        cfs: 45
                         attributes: []
           headers: {}
         '403':
@@ -5349,7 +5381,7 @@ components:
                 description: Image caption.
                 example: sunset
               Category:
-                type: number
+                type: string
                 description: The category of the image.
                 example: sunset
               RoomId:
@@ -6471,7 +6503,7 @@ components:
                 type: string
                 description: Image caption.
               category:
-                type: number
+                type: string
                 description: The category of the image.
               links:
                 type: array
