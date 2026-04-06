@@ -1,37 +1,122 @@
 openapi: 3.0.1
 info:
-  title: HM_RM
-  description: ''
+  title: Vervotech Mapping APIs
+  description: >
+    Vervotech Mapping APIs provide hotel property mapping and room mapping capabilities for travel technology companies.
+
+
+    **Hotel Mapping** enables you to deduplicate hotel properties across multiple suppliers by assigning a unique Vervotech ID to each property. You can synchronize mappings incrementally, retrieve curated content, and manage provider data.
+
+
+    **Room Mapping** standardizes room types across suppliers for the same hotel, enabling accurate room-level comparisons. It supports real-time, asynchronous, file-based, and board basis mapping workflows.
+
+
+    For authentication, include your `accountId` and `apikey` (or `token` for Room Mapping APIs) in the request headers.
   version: 1.0.0
 tags:
   - name: Hotel Mapping/Metadata Content
+    description: >-
+      Reference data APIs that return master lists such as hotel facilities, chains, brands, property types, countries, provider names, and Vervotech IDs. Use these endpoints to bootstrap your integration.
   - name: Metadata Content
   - name: Hotel Mapping/Mappings
+    description: >-
+      Core mapping APIs for synchronizing hotel property mappings. Retrieve new, updated, and deleted mappings incrementally, view mapping statistics, and export mapping data.
   - name: Mappings
   - name: Hotel Mapping/Curated Content
+    description: >-
+      Retrieve curated hotel content that combines the best available data from all providers, including property details, facilities, and location information.
   - name: Curated Content
   - name: Hotel Mapping/Provider Content
+    description: >-
+      Access raw provider-level hotel content and identify unmapped properties that could not be matched during the mapping process.
   - name: Provider Content
   - name: Hotel Mapping/Location Content
+    description: >-
+      Location data APIs powered by OpenStreetMap. Retrieve detailed location information including coordinates, boundaries, and hierarchical geography data.
   - name: Location
   - name: Hotel Mapping/Operational APIs
+    description: >-
+      Workflow APIs for uploading provider hotel content via SFTP, triggering mapping jobs, tracking mapping progress, and verifying booked hotel mappings.
   - name: Operational APIs
   - name: Hotel Mapping/Dynamic Mapping APIs
+    description: >-
+      Real-time mapping API that finds matching hotels across providers based on hotel name, address, and coordinates. Useful for on-demand mapping of hotels not yet in the system.
   - name: Dynamic Mapping APIs
   - name: Hotel Mapping/Dual Mapping APIs
+    description: >-
+      Look up cross-provider hotel mappings and curated content in real time using a provider hotel ID. Includes usage statistics for monitoring API consumption.
   - name: Dual Mapping APIs
   - name: Room Mapping/Mapping API
+    description: >-
+      Real-time room mapping API that groups rooms from multiple providers for a single hotel into standardized room categories with attributes such as bed type, view, and amenities.
   - name: Room Mapping APIs
   - name: Room Mapping/Async Room Mapping API
+    description: >-
+      Asynchronous room mapping for large requests exceeding 1,000 rooms. Submit a mapping request and retrieve results using a trace ID.
   - name: Async Room Mapping API
   - name: Room Mapping/Board Basis Mappings
+    description: >-
+      Standardize meal plan terminology from different suppliers. Retrieve master board basis definitions and map raw supplier terms to standardized codes such as BB (Bed and Breakfast) and HB (Half Board).
+  - name: Room Mapping/File Based Room Mapping (Offline)
+    description: >
+      Offline room mapping via file upload. Provide room information from your suppliers in CSV format and receive standardized room mappings in return.
+
+
+      **Processing Limits:** A maximum of 100,000 rooms are processed per batch. Records beyond this limit are skipped automatically. This limit can be overridden via the `ROOM_BATCH_LIMIT` environment variable.
+
+
+      ---
+
+
+      ### Input File Columns
+
+
+      | Column | Required | Description |
+      |--------|----------|-------------|
+      | **VervotechHotelId** | Recommended | The Vervotech ID assigned to the property. If omitted, the system attempts a lookup using Provider and ProviderHotelId. If lookup fails, an ID is auto-generated in the format `{Provider}_{ProviderHotelId}`. Without this value, rooms from different providers for the same hotel cannot be grouped correctly. |
+      | **Provider** | Yes | Supplier name. Must match the [master provider names](https://docs.vervotech.com/get-all-provider-names-16946072e0). |
+      | **ProviderHotelId** | Yes | The property ID assigned by the supplier. |
+      | **RoomCode** | Yes | The room code from the supplier. Do not include rate plan codes. |
+      | **RoomName** | Yes | The room name from the supplier. |
+      | **Description** | No | Room description from the supplier. |
+      | **Bed** | No | Bedding information from the supplier. |
+      | **View** | No | View information from the supplier. |
+      | **Refundability** | No | Refundability information from the supplier. |
+      | **BoardBasis** | No | Board basis information from the supplier. |
+
+
+      Do not insert values in JSON or array format. Leave optional columns empty if no data is available.
+
+
+      ---
+
+
+      ### Output File Columns
+
+
+      | Column | Description |
+      |--------|-------------|
+      | **VervotechId** | Unique identifier assigned to the mapped room. |
+      | **ProviderHotelId** | The property ID assigned by the supplier. |
+      | **Provider** | Supplier name from the [master provider list](https://docs.vervotech.com/get-all-provider-names-16946072e0). |
+      | **GroupId** | Composite key in the format `VervotechHotelId-GroupId`. |
+      | **RoomCode** | Room code from the supplier. |
+      | **RoomName** | Room name from the supplier. |
+      | **MappedStandardName** | Standardized room name generated by Vervotech algorithms. |
+      | **MappedMasterTitle** | Room name from the official hotel website. |
+      | **MasterRoomId** | Master ID from Vervotech master data. Empty if no match is found. |
+      | **MappedCategory** | Room category extracted from the room name. |
+      | **MappedView** | View category extracted from the room name. |
+      | **MappedBedType** | Bed type extracted from the room name. |
+      | **MappedAttributes** | Unique room features extracted from the room name. |
+      | **MappedOccupancy** | Maximum occupancy as reported by the supplier. |
 paths:
   /content/GetMasterHotelFacilityGroups:
     get:
       summary: Get Master Hotel Facilities
       deprecated: false
-      description: |
-        Returns the list of hotel facilities for the given account.
+      description: >-
+        Returns the complete list of standardized hotel facility groups available for the given account. Use this to map provider-specific facilities to Vervotech master facility definitions.
       operationId: content/GetMasterHotelFacilityGroups
       tags:
         - Hotel Mapping/Metadata Content
@@ -39,15 +124,14 @@ paths:
       parameters:
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -93,8 +177,8 @@ paths:
     get:
       summary: Get Master Hotel Chains
       deprecated: false
-      description: |
-        Returns the list of hotel chains for the given account.
+      description: >-
+        Returns the complete list of master hotel chains available for the given account. Each chain includes associated brand information.
       operationId: content/GetMasterHotelChains
       tags:
         - Hotel Mapping/Metadata Content
@@ -102,15 +186,14 @@ paths:
       parameters:
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -156,8 +239,8 @@ paths:
     get:
       summary: Get Master Hotel Brands
       deprecated: false
-      description: |
-        Returns the list of hotel brands for the given account.
+      description: >-
+        Returns the complete list of master hotel brands available for the given account.
       operationId: content/GetMasterHotelBrands
       tags:
         - Hotel Mapping/Metadata Content
@@ -165,15 +248,14 @@ paths:
       parameters:
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -219,8 +301,8 @@ paths:
     get:
       summary: Get Master Property Types
       deprecated: false
-      description: |
-        Returns the list of property types for the given account.
+      description: >-
+        Returns the complete list of standardized property types (e.g., Hotel, Motel, Resort, Villa) available for the given account.
       operationId: content/GetMasterPropertyTypes
       tags:
         - Hotel Mapping/Metadata Content
@@ -228,15 +310,14 @@ paths:
       parameters:
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -282,9 +363,8 @@ paths:
     get:
       summary: Get All Master Countries
       deprecated: false
-      description: >
-        Returns a key-value pair of countries having key as country code and
-        value as country name.
+      description: >-
+        Returns all supported countries as key-value pairs, where the key is the ISO country code and the value is the country name.
       operationId: content/GetMasterCountryCodes
       tags:
         - Hotel Mapping/Metadata Content
@@ -292,15 +372,14 @@ paths:
       parameters:
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -344,12 +423,10 @@ paths:
       security: []
   /hotels/GetAllVervotechIds:
     get:
-      summary: Get All Vervotech Ids
+      summary: Get All Vervotech IDs
       deprecated: false
-      description: >
-        All the hotels in the system are assigned a unique mapping Id. This API
-        returns those hotel ids in a paged fashion which are available on your
-        account.
+      description: >-
+        Returns all Vervotech hotel IDs available on your account in a paginated response. Each hotel in the system is assigned a unique Vervotech ID. Use the `resumeKey` parameter for pagination and `lastUpdateDateTime` for incremental synchronization.
       operationId: hotels/getAllVervotechIds
       tags:
         - Hotel Mapping/Metadata Content
@@ -358,12 +435,10 @@ paths:
         - name: resumeKey
           in: query
           description: >-
-            This is an encoded string, used in API's where incremental sync of
-            content is required. This encoded string contains the details of
-            your current API call and when it is passed in the header, the
-            server returns next new records based on resumeKey value. When
-            ResumeKey is returned as null it means there are no further records
-            available to fetch. ResumeKey has an expiry duration of 14 days.
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
           required: false
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -371,23 +446,22 @@ paths:
         - name: lastUpdateDateTime
           in: query
           description: >
-            The date and time from which the changes need to be pulled. Format
-            yyyy-MM-ddTHH:mm:ssZ.
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
           required: false
           example: '2019-04-10T06:30:00Z'
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -395,14 +469,10 @@ paths:
         - name: syncId
           in: header
           description: >-
-            The content sync tool is supposed to run at the consumer end on
-            scheduled frequency. The syncId is the identifier to uniquely
-            identify each content sync run. For example, if you run your content
-            sync every Sunday, then all the API calls made to Vervotech Mappings
-            on one Sunday should have same syncId so that those calls will be
-            differentiated from previous/next Sunday's content sync cycle. The
-            value for this is generally, guid/uuid. You can generate any unique
-            string value.
+            A unique identifier for each content synchronization cycle.
+            All API calls within a single sync run should share the same
+            syncId to distinguish them from other sync cycles. Use a
+            GUID/UUID or any unique string value.
           required: true
           example: ''
           schema:
@@ -464,18 +534,13 @@ paths:
     get:
       summary: Get Mappings
       deprecated: false
-      description: >
-        * This API returns mappings which are new and updated on your account
-        after the date which you have passed for lastUpdatedDateTime in the API
-        request.
+      description: >-
+        Returns all new and updated hotel mappings on your account since the specified `lastUpdateDateTime`. This is the recommended API for incremental synchronization of mappings.
 
-        * It is recommended to create new Vervotech hotel in your system if you
-        receive VervotechId which is not available already in your system.
 
-        * Generally, when property content is updated from the supplier end at
-        that time mapping is updated
+        - If a response contains a VervotechId not yet in your system, create a new hotel record for it.
 
-                
+        - Mappings are typically updated when property content changes at the supplier end.
       operationId: mappings/GetMappings
       tags:
         - Hotel Mapping/Mappings
@@ -484,12 +549,10 @@ paths:
         - name: resumeKey
           in: query
           description: >-
-            This is an encoded string, used in API's where incremental sync of
-            content is required. This encoded string contains the details of
-            your current API call and when it is passed in the header, the
-            server returns next new records based on resumeKey value. When
-            ResumeKey is returned as null it means there are no further records
-            available to fetch. ResumeKey has an expiry duration of 14 days.
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
           required: false
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -497,10 +560,8 @@ paths:
         - name: limit
           in: query
           description: >
-            Total number of items expected in response starting from given
-            'resumeKey'. Maximum allowed limit is 1000.
-
-            Example: 10
+            Maximum number of items to return per page. Maximum allowed
+            value is 1000.
           required: false
           schema:
             type: number
@@ -508,8 +569,8 @@ paths:
         - name: lastUpdateDateTime
           in: query
           description: >
-            The date and time from which the changes need to be pulled. Format
-            yyyy-MM-ddTHH:mm:ssZ.
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
           required: true
           example: '2019-04-10T06:30:00Z'
           schema:
@@ -517,13 +578,10 @@ paths:
         - name: providerFamily
           in: query
           description: >
-            Optional. Name of hotel provider. To get hotel provider name use
-            [GetAllProviderNames
-            Api](https://hotelmapping.vervotech.com/documentation/index.html#operation/accountconfig/GetAllProviderNames)
-
-
-            If not given then the result will include all the providers
-            associated to the given account.
+            Optional. Provider family name. If omitted, results include
+            all providers associated with the account. See
+            [Get All Provider Names](#operation/accountconfig/GetAllProviderNames)
+            for valid values.
           required: false
           example: EAN
           schema:
@@ -531,29 +589,24 @@ paths:
         - name: syncId
           in: header
           description: >-
-            The content sync tool is supposed to run at the consumer end on
-            scheduled frequency. The syncId is the identifier to uniquely
-            identify each content sync run. For example, if you run your content
-            sync every Sunday, then all the API calls made to Vervotech Mappings
-            on one Sunday should have same syncId so that those calls will be
-            differentiated from previous/next Sunday's content sync cycle. The
-            value for this is generally, guid/uuid. You can generate any unique
-            string value.
+            A unique identifier for each content synchronization cycle.
+            All API calls within a single sync run should share the same
+            syncId to distinguish them from other sync cycles. Use a
+            GUID/UUID or any unique string value.
           required: true
           example: ''
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -611,15 +664,11 @@ paths:
     get:
       summary: Get New Mappings
       deprecated: false
-      description: >
-        * This API returns mappings which are added newly on your account after
-        the date which you have passed for lastUpdatedDateTime in the API
-        request.
+      description: >-
+        Returns mappings that were newly added to your account after the specified `lastUpdateDateTime`. If a response contains a VervotechId not yet in your system, create a new hotel record for it.
 
-        * It is recommended to create new Vervotech hotel in your system if you
-        receive VervotechId which is not available already in your system.
 
-        * Recommended to use GetMappings api for new and updated mappings.
+        **Note:** It is recommended to use the [Get Mappings](#operation/mappings/GetMappings) API instead, which returns both new and updated mappings in a single call.
       operationId: mappings/GetNewMappings
       tags:
         - Hotel Mapping/Mappings
@@ -628,10 +677,8 @@ paths:
         - name: limit
           in: query
           description: >
-            Total number of items expected in response starting from given
-            'resumeKey'. Maximum allowed limit is 1000.
-
-            Example: 10
+            Maximum number of items to return per page. Maximum allowed
+            value is 1000.
           required: false
           schema:
             type: number
@@ -639,12 +686,10 @@ paths:
         - name: resumeKey
           in: query
           description: >-
-            This is an encoded string, used in API's where incremental sync of
-            content is required. This encoded string contains the details of
-            your current API call and when it is passed in the header, the
-            server returns next new records based on resumeKey value. When
-            ResumeKey is returned as null it means there are no further records
-            available to fetch. ResumeKey has an expiry duration of 14 days.
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
           required: false
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -652,8 +697,8 @@ paths:
         - name: lastUpdateDateTime
           in: query
           description: >
-            The date and time from which the changes need to be pulled. Format
-            yyyy-MM-ddTHH:mm:ssZ.
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
           required: true
           example: '2019-04-10T06:30:00Z'
           schema:
@@ -661,28 +706,24 @@ paths:
         - name: providerFamily
           in: query
           description: >
-            Optional. Name of hotel provider. To get hotel provider name use
-            [GetAllProviderNames
-            Api](https://hotelmapping.vervotech.com/documentation/index.html#operation/accountconfig/GetAllProviderNames)
-
-
-            If not given then the result will include all the providers
-            associated to the given account.
+            Optional. Provider family name. If omitted, results include
+            all providers associated with the account. See
+            [Get All Provider Names](#operation/accountconfig/GetAllProviderNames)
+            for valid values.
           required: false
           example: EAN
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -690,14 +731,10 @@ paths:
         - name: syncId
           in: header
           description: >-
-            The content sync tool is supposed to run at the consumer end on
-            scheduled frequency. The syncId is the identifier to uniquely
-            identify each content sync run. For example, if you run your content
-            sync every Sunday, then all the API calls made to Vervotech Mappings
-            on one Sunday should have same syncId so that those calls will be
-            differentiated from previous/next Sunday's content sync cycle. The
-            value for this is generally, guid/uuid. You can generate any unique
-            string value.
+            A unique identifier for each content synchronization cycle.
+            All API calls within a single sync run should share the same
+            syncId to distinguish them from other sync cycles. Use a
+            GUID/UUID or any unique string value.
           required: true
           example: ''
           schema:
@@ -713,7 +750,7 @@ paths:
                   ResumeKey:
                     $ref: '#/components/schemas/ResumeKey'
                   Mappings:
-                    $ref: '#/components/schemas/HotelMapping'
+                    $ref: '#/components/schemas/NewHotelMapping'
                   Status:
                     $ref: '#/components/schemas/Status'
                   Message:
@@ -755,21 +792,11 @@ paths:
     get:
       summary: Get Updated Mappings
       deprecated: false
-      description: >
-        * This API returns the mappings for which the provider hotel content is
-        updated on your account after the date which you have passed for
-        lastUpdatedDateTime in the API request.
+      description: >-
+        Returns mappings whose provider hotel content has been updated on your account since the specified `lastUpdateDateTime`. Mappings are typically updated when supplier-side property content changes. Use this to refresh property content for affected hotel IDs.
 
-        * Generally, when property content is updated from the supplier end at
-        that time mapping is updated. To avoid any inaccurate information being
-        displayed to end user updated mapping api can be used.
 
-        For e.g. Fetch updated mappings using lastUpdatedDateTime and then
-        update the property content for respective property ids.
-
-        * Recommended to use GetMappings api for new and updated mappings.
-
-                  
+        **Note:** It is recommended to use the [Get Mappings](#operation/mappings/GetMappings) API instead, which returns both new and updated mappings in a single call.
       operationId: mappings/GetUpdatedMappings
       tags:
         - Hotel Mapping/Mappings
@@ -778,10 +805,8 @@ paths:
         - name: limit
           in: query
           description: >
-            Total number of items expected in response starting from given
-            'resumeKey'. Maximum allowed limit is 1000.
-
-            Example: 10
+            Maximum number of items to return per page. Maximum allowed
+            value is 1000.
           required: false
           schema:
             type: number
@@ -789,12 +814,10 @@ paths:
         - name: resumeKey
           in: query
           description: >-
-            This is an encoded string, used in API's where incremental sync of
-            content is required. This encoded string contains the details of
-            your current API call and when it is passed in the header, the
-            server returns next new records based on resumeKey value. When
-            ResumeKey is returned as null it means there are no further records
-            available to fetch. ResumeKey has an expiry duration of 14 days.
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
           required: false
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -802,8 +825,8 @@ paths:
         - name: lastUpdateDateTime
           in: query
           description: >
-            The date and time from which the changes need to be pulled. Format
-            yyyy-MM-ddTHH:mm:ssZ.
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
           required: true
           example: '2019-04-10T06:30:00Z'
           schema:
@@ -811,28 +834,24 @@ paths:
         - name: providerFamily
           in: query
           description: >
-            Optional. Name of hotel provider. To get hotel provider name use
-            [GetAllProviderNames
-            Api](https://hotelmapping.vervotech.com/documentation/index.html#operation/accountconfig/GetAllProviderNames)
-
-
-            If not given then the result will include all the providers
-            associated to the given account.
+            Optional. Provider family name. If omitted, results include
+            all providers associated with the account. See
+            [Get All Provider Names](#operation/accountconfig/GetAllProviderNames)
+            for valid values.
           required: false
           example: EAN
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -840,14 +859,10 @@ paths:
         - name: syncId
           in: header
           description: >-
-            The content sync tool is supposed to run at the consumer end on
-            scheduled frequency. The syncId is the identifier to uniquely
-            identify each content sync run. For example, if you run your content
-            sync every Sunday, then all the API calls made to Vervotech Mappings
-            on one Sunday should have same syncId so that those calls will be
-            differentiated from previous/next Sunday's content sync cycle. The
-            value for this is generally, guid/uuid. You can generate any unique
-            string value.
+            A unique identifier for each content synchronization cycle.
+            All API calls within a single sync run should share the same
+            syncId to distinguish them from other sync cycles. Use a
+            GUID/UUID or any unique string value.
           required: true
           example: ''
           schema:
@@ -863,7 +878,7 @@ paths:
                   ResumeKey:
                     $ref: '#/components/schemas/ResumeKey'
                   Mappings:
-                    $ref: '#/components/schemas/HotelMapping'
+                    $ref: '#/components/schemas/UpdatedHotelMapping'
                   Status:
                     $ref: '#/components/schemas/Status'
                   Message:
@@ -905,17 +920,15 @@ paths:
     get:
       summary: Get Deleted Mappings
       deprecated: false
-      description: >
-        * This API returns mappings which are deleted on your account after the
-        date which you have passed for lastUpdatedDateTime in the API request.
+      description: >-
+        Returns mappings that have been deleted from your account since the specified `lastUpdateDateTime`. It is recommended to fetch deleted mappings regularly to prevent incorrect bookings.
 
-        * Mappings will be deleted in following scenarios :
-            - When property is disabled from the supplier end
-            - When duplicate hotels are fixed by merging two same properties into one and remaining property is disabled. This is rare scenario.
-        * It is recommended to fetch deleted mappings to avoid any bad
-        mapping/booking.
 
-                
+        Mappings are deleted in the following scenarios:
+
+        - The property is disabled by the supplier.
+
+        - Duplicate properties are merged, and the redundant property is disabled (rare).
       operationId: mappings/GetDeletedMappings
       tags:
         - Hotel Mapping/Mappings
@@ -924,12 +937,10 @@ paths:
         - name: resumeKey
           in: query
           description: >-
-            This is an encoded string, used in API's where incremental sync of
-            content is required. This encoded string contains the details of
-            your current API call and when it is passed in the header, the
-            server returns next new records based on resumeKey value. When
-            ResumeKey is returned as null it means there are no further records
-            available to fetch. ResumeKey has an expiry duration of 14 days.
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
           required: false
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -937,10 +948,8 @@ paths:
         - name: limit
           in: query
           description: >
-            Total number of items expected in response starting from given
-            'resumeKey'. Maximum allowed limit is 1000.
-
-            Example: 10
+            Maximum number of items to return per page. Maximum allowed
+            value is 1000.
           required: false
           schema:
             type: number
@@ -948,8 +957,8 @@ paths:
         - name: lastUpdateDateTime
           in: query
           description: >
-            The date and time from which the changes need to be pulled. Format
-            yyyy-MM-ddTHH:mm:ssZ.
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
           required: true
           example: '2019-04-10T06:30:00Z'
           schema:
@@ -957,13 +966,10 @@ paths:
         - name: providerFamily
           in: query
           description: >
-            Optional. Name of hotel provider. To get hotel provider name use
-            [GetAllProviderNames
-            Api](https://hotelmapping.vervotech.com/documentation/index.html#operation/accountconfig/GetAllProviderNames)
-
-
-            If not given then the result will include all the providers
-            associated to the given account.
+            Optional. Provider family name. If omitted, results include
+            all providers associated with the account. See
+            [Get All Provider Names](#operation/accountconfig/GetAllProviderNames)
+            for valid values.
           required: false
           example: EAN
           schema:
@@ -971,29 +977,24 @@ paths:
         - name: syncId
           in: header
           description: >-
-            The content sync tool is supposed to run at the consumer end on
-            scheduled frequency. The syncId is the identifier to uniquely
-            identify each content sync run. For example, if you run your content
-            sync every Sunday, then all the API calls made to Vervotech Mappings
-            on one Sunday should have same syncId so that those calls will be
-            differentiated from previous/next Sunday's content sync cycle. The
-            value for this is generally, guid/uuid. You can generate any unique
-            string value.
+            A unique identifier for each content synchronization cycle.
+            All API calls within a single sync run should share the same
+            syncId to distinguish them from other sync cycles. Use a
+            GUID/UUID or any unique string value.
           required: true
           example: ''
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1009,7 +1010,7 @@ paths:
                   ResumeKey:
                     $ref: '#/components/schemas/ResumeKey'
                   Mappings:
-                    $ref: '#/components/schemas/HotelMapping'
+                    $ref: '#/components/schemas/DeletedHotelMapping'
                   Status:
                     $ref: '#/components/schemas/Status'
                   Message:
@@ -1051,11 +1052,8 @@ paths:
     get:
       summary: Get Mapping Statistics
       deprecated: false
-      description: >
-        Provides a count of various properties parameters such as unique, 
-
-        duplicate, unmapped invalid and total properties which can be used to
-        track the quality of the content.
+      description: >-
+        Returns aggregate mapping statistics for your account, including counts of unique, duplicate, unmapped, invalid, and total properties. Use this to monitor mapping quality and coverage.
       operationId: mappings/GetMappingStatistics
       tags:
         - Hotel Mapping/Mappings
@@ -1063,15 +1061,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1128,93 +1125,62 @@ paths:
       summary: Export Mappings File
       deprecated: false
       description: >
-        Exports all the mappings associated to the given account in the .csv
-        format and the file is sent to you by email.
+        Exports all mappings for the given account as CSV files and delivers them via email and SFTP. Access the files using the SFTP credentials provided during account setup.
 
-        The associated files will be uploaded into your ftp account. The files
-        can be accessed by ftp credentials, which is already been shared during
-        the signup process.
 
-         #### File description:
-         When this API is requested by the client the following files are generated -:
-         1) Mapping File.
-           This file contains mapping information in your account corresponding to each provider. The file name convention is -: accountname_mappings_guid.csv
-         * Following are the columns included in the template:
+        #### Generated Files
 
-             * UnicaId: The name of the provider providing that hotel. This must be from the master Vervotech Mappings master provider names
-             * ProviderHotelId: This would be the property's ID, provided by the provider.
-             * ProviderFamily: Name of the provider.            
-             * ModifiedOn: Date of the mapping when updated.          
-             * ChannelIds: ChannelName.Rate plan type for the provider.     
-             * ProviderLocationid: DestinationCode for providerHotelId grouped under unicaId.
-             * Please refer the mapping file template here,
-        <div align="right">
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/accountname_mappings_f8b3216d-f558-4398-a498-9f279b76a625.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>
+        **1. Mapping File** (`accountname_mappings_guid.csv`)
 
-        </div>
-         2) Mapping File(New format).
-           This file contains mapping information in new csv format to each provider. The file name convention is -: accountname_transformed_guid.csv
-         * Following are the columns included in the template:
+        Contains per-provider mapping data with the following columns:
 
-             * UnicaId: Unique Vervotech hotel Id
-             * Provider Name: This would be the property Id provided by the provider which exist in that vervotech Id group.
-             * Please refer the mapping file template in new format here,
+        | Column | Description |
+        |--------|-------------|
+        | UnicaId | Vervotech hotel ID |
+        | ProviderHotelId | Property ID from the provider |
+        | ProviderFamily | Provider name |
+        | ModifiedOn | Date the mapping was last updated |
+        | ChannelIds | Channel name and rate plan type |
+        | ProviderLocationId | Destination code grouped under the Vervotech ID |
 
-        <div align="right">
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/accountname_transformed_mappings_f8b3216d-f558-4398-a498-9f279b76a625.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>
+        [Download mapping file template](https://hotelmapping.vervotech.com/documentation/accountname_mappings_f8b3216d-f558-4398-a498-9f279b76a625.csv)
 
-        </div>
 
-         3) Content File.
-           This file contains mapping information in new csv format to each provider. The file name convention is -: accountname_hotels_guid.csv
-         * Following are the columns included in the template:
+        **2. Transformed Mapping File** (`accountname_transformed_guid.csv`)
 
-             * UnicaId: Unique Id for each group of similar hotels.
-             * HotelName: Name of the property.
-             * Lat: Latitude of the property.
-             * Long: Longitude of the property.
-             * AddressLine1 : Property's address line 1. 
-             * AddressLine2 : Property's address line 2.
-             * City : Name of the city where the property is located.
-             * State: Name of the state where the property is located.
-             * StateCode :  Code of the state where the property is located.
-             * CountryName: Name of the country where the property is located. Either one of the CountryName and CountryCode is sufficient.
-             * CountryCode : ISO country code where the property is located.
-             * PostalCode:  Zipcode of the property.
-             * StarRating: Star ratings of the property.
-             * PropertyType: Hotel property type. Eg: - Motel, Resort, Villa, etc.
-             * ChainName: Information about the chain name.
-             * BrandName: Information about the brand name.
-             * CityLocationId: Master city location id associated with this property.
-             * MasterCityName: MasterCityLocationName is the cityname associated with city location id.
-             * LocationIds: Master location ids associated with this property.
-             * Phones: Property's phone numbers.
-             * Fax: Property's fax number.
-             * Email: Property's email address.
-             * Website: Property's official website address.
-             * AirportCodes: List of Airports nearby the hotel.
-             * TrainStations: List of TrainStations nearby the hotel.
-             * ProviderHotelId: Provider hotel id.
-             * ProviderFamily: Name of hotel provider.
-             * GooglePlusCode: GooglePlusCode is the unique code for the property.
-             * Please refer the curated content file template here,
-        <div align="right">
+        Contains mappings in a pivoted format with Vervotech ID and provider-specific hotel IDs as columns.
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/accountname_hotels_f8b3216d-f558-4398-a498-9f279b76a625.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>     
 
-        </div>
-             
+        [Download transformed mapping file template](https://hotelmapping.vervotech.com/documentation/accountname_transformed_mappings_f8b3216d-f558-4398-a498-9f279b76a625.csv)
+
+
+        **3. Content File** (`accountname_hotels_guid.csv`)
+
+        Contains curated hotel content with the following columns:
+
+        | Column | Description |
+        |--------|-------------|
+        | UnicaId | Vervotech hotel ID |
+        | HotelName | Property name |
+        | Lat / Long | Property coordinates |
+        | AddressLine1 / AddressLine2 | Property address |
+        | City / State / StateCode | Location details |
+        | CountryName / CountryCode | Country (ISO code) |
+        | PostalCode | Zip/postal code |
+        | StarRating | Star rating |
+        | PropertyType | Property type (e.g., Hotel, Motel, Resort) |
+        | ChainName / BrandName | Chain and brand information |
+        | CityLocationId / MasterCityName | Master city location data |
+        | LocationIds | Associated master location IDs |
+        | Phones / Fax / Email / Website | Contact information |
+        | AirportCodes / TrainStations | Nearby transport hubs |
+        | ProviderHotelId / ProviderFamily | Provider identification |
+        | GooglePlusCode | Google Plus Code for the property |
+
+
+        [Download content file template](https://hotelmapping.vervotech.com/documentation/accountname_hotels_f8b3216d-f558-4398-a498-9f279b76a625.csv)
       operationId: mappings/ExportMappingsFile
       tags:
         - Hotel Mapping/Mappings
@@ -1239,15 +1205,14 @@ paths:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1299,11 +1264,10 @@ paths:
       security: []
   /hotels/GetMappingsCount:
     get:
-      summary: Get Hotel count for new, updated and deleted.
+      summary: Get Mapping Counts
       deprecated: false
-      description: >
-        Returns the total count of hotels from new, updated, and deleted API in
-        your account for the requested parameters.
+      description: >-
+        Returns the total count of new, updated, or deleted hotel mappings on your account for the specified parameters. Use the `apiType` parameter to select which count to retrieve.
       operationId: hotels/GetMappingsCount
       tags:
         - Hotel Mapping/Mappings
@@ -1312,13 +1276,10 @@ paths:
         - name: providerFamily
           in: query
           description: >
-            Optional. Name of hotel provider. To get hotel provider name use
-            [GetAllProviderNames
-            Api](https://hotelmapping.vervotech.com/documentation/index.html#operation/accountconfig/GetAllProviderNames)
-
-
-            If not given then the result will include all the providers
-            associated to the given account.
+            Optional. Provider family name. If omitted, results include
+            all providers associated with the account. See
+            [Get All Provider Names](#operation/accountconfig/GetAllProviderNames)
+            for valid values.
           required: false
           example: EAN
           schema:
@@ -1326,8 +1287,8 @@ paths:
         - name: lastUpdateDateTime
           in: query
           description: >
-            The date and time from which the changes need to be pulled. Format
-            yyyy-MM-ddTHH:mm:ssZ.
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
           required: true
           example: '2019-04-10T06:30:00Z'
           schema:
@@ -1343,15 +1304,14 @@ paths:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1415,10 +1375,10 @@ paths:
       security: []
   /mappings/GetProviderHotelMappingsByProviderId:
     post:
-      summary: Get Provider Hotel Mappings by ProviderId
+      summary: Get Provider Hotel Mappings by Provider ID
       deprecated: false
       description: >
-        Returns the all mappings for the given provider family and provider
+        Returns all mappings for the specified provider family and provider
         hotel id.
                 
       operationId: mappings/GetProviderHotelMappingsByProviderId
@@ -1436,15 +1396,14 @@ paths:
             default: application/json
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1510,10 +1469,10 @@ paths:
       security: []
   /mappings/GetProviderHotelMappingsByVervotechId:
     get:
-      summary: Get Provider Hotel Mappings By VervotechId
+      summary: Get Provider Hotel Mappings by Vervotech ID
       deprecated: false
-      description: |
-        Returns the list of all the provider hotel mappings by vervotechId.
+      description: >-
+        Returns all provider hotel mappings associated with the specified Vervotech ID, including provider hotel IDs and provider family names.
       operationId: /mappings/GetProviderHotelMappingsByVervotechId
       tags:
         - Hotel Mapping/Mappings
@@ -1529,15 +1488,14 @@ paths:
             type: number
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -1616,15 +1574,10 @@ paths:
       security: []
   /content/GetCuratedContentByProvider:
     post:
-      summary: Get Curated Content By Provider Hotel Ids
+      summary: Get Curated Content by Provider Hotel IDs
       deprecated: false
-      description: >
-        This provides curated content of the hotels by combining all the quality
-        data available from all the providers.
-
-        Users need to send a combination of provider hotel Ids & provider
-        families, and curated content belonging to those Ids and families would
-        be given in response.
+      description: >-
+        Returns curated hotel content by combining the highest-quality data available across all providers. Submit a list of provider hotel ID and provider family combinations in the request body to receive curated content for the matching properties.
       operationId: content/GetCuratedContentByProvider
       tags:
         - Hotel Mapping/Curated Content
@@ -1632,15 +1585,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1787,14 +1739,10 @@ paths:
       security: []
   /content/GetCuratedContentByVervotechIds:
     post:
-      summary: Get Curated Content By Vervotech Ids
+      summary: Get Curated Content by Vervotech IDs
       deprecated: false
-      description: >
-        This provides curated content of the hotels by combining all the quality
-        data available from all the providers.
-
-        Users need to send the Vervotech mapping ids and curated content
-        belonging to those Id's would be given in response.
+      description: >-
+        Returns curated hotel content by combining the highest-quality data available across all providers. Submit a list of Vervotech mapping IDs (maximum 500 per request) in the request body to receive curated content for the matching properties.
       operationId: content/GetCuratedContentByVervotechIds
       tags:
         - Hotel Mapping/Curated Content
@@ -1802,15 +1750,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -1964,13 +1911,183 @@ paths:
                 $ref: '#/components/schemas/Error'
           headers: {}
       security: []
+  /content/GetUpdatedCuratedContent:
+    get:
+      summary: Get Updated Curated Content
+      deprecated: false
+      description: >-
+        Returns curated hotel content for all properties that have been updated since the specified `lastUpdateDateTime`. Use `resumeKey` for pagination to retrieve the next page of results incrementally.
+      operationId: content/GetUpdatedCuratedContent
+      tags:
+        - Hotel Mapping/Curated Content
+        - Curated Content
+      parameters:
+        - name: resumeKey
+          in: query
+          description: >-
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
+          required: false
+          example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
+          schema:
+            type: string
+        - name: lastUpdateDateTime
+          in: query
+          description: >-
+            The starting date and time for incremental data retrieval.
+            Format: `yyyy-MM-ddTHH:mm:ssZ`.
+          required: true
+          example: '2019-04-10T06:30:00Z'
+          schema:
+            type: string
+        - name: apikey
+          in: header
+          description: The API key for your account.
+          required: true
+          example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
+          schema:
+            type: string
+        - name: accountId
+          in: header
+          description: The account ID of your registered account in Vervotech Mappings.
+          required: true
+          example: DemoAccount
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Get Updated Curated Content Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUpdatedCuratedContentResponse'
+              example:
+                Status: true
+                Message: Success
+                StatusCode: 2000
+                ResumeKey: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
+                CuratedHotels:
+                  - VervotechId: 16042757
+                    Name: Imperial Motel
+                    Rating: '3'
+                    AddressLine1: West Flagler Street Miami, West Flagler Street
+                    AddressLine2: from Saint Demetrius Cathedral , CORAL GABLES
+                    CityName: Coral Gables
+                    CityCode: CGB
+                    StateName: Florida
+                    StateCode: '121'
+                    CountryName: United States of America
+                    CountryCode: US
+                    PostalCode: '3880'
+                    Latitude: 25.771112
+                    Longitude: -80.27933
+                    Website: NA
+                    Fax: +1 323 555 1234
+                    PropertyType: Motel
+                    ChainName: Taj Hotels
+                    BrandName: Taj
+                    CityLocationId: '50'
+                    MasterCityLocationName: Berat
+                    GooglePlusCode: FQ5M+MX
+                    LocationIds: 433,123
+                    Phones:
+                      - +1 2323-3433-3433
+                    Emails:
+                      - abc@gmail.com
+                    Facilities:
+                      - Id: 1
+                        Name: Parking
+                        GroupId: 2
+                    Airports:
+                      - LocationId: 10006363
+                        Code: NYC
+                        Name: NewYork Airport
+                    TrainStations:
+                      - LocationId: 722832
+                        Code: SAY
+                        Name: Arezzo Pescaiola Station
+                    PointOfInterests:
+                      - LocationId: 26834
+                        Code: CLU
+                        Name: Club de Golf Colonial
+                    ConnectedLocations:
+                      - LocationId: 26830
+                        Code: VIC
+                        Name: Victoriaville
+                    Neighbourhoods:
+                      - LocationId: 73
+                        Code: NU
+                        Name: Nuussuaq
+                    Stadiums:
+                      - LocationId: 773
+                        Code: LAD
+                        Name: Ladd-Peebles Stadium
+                    LocationMappings:
+                      - CityLocationId: '50'
+                        CityLocationName: Coral Gables
+                        Source: Location Content Provider
+                        TrainStation:
+                          LocationId: 722832
+                          Code: SAY
+                          Name: Arezzo Pescaiola Station
+                        ConnectedLocations:
+                          - LocationId: 26830
+                            Code: VIC
+                            Name: Victoriaville
+                        Airports:
+                          - LocationId: 10006363
+                            Code: NYC
+                            Name: NewYork Airport
+                        PointOfInterests:
+                          - LocationId: 26834
+                            Code: CLU
+                            Name: Club de Golf Colonial
+                        Stadiums:
+                          - LocationId: 773
+                            Code: LAD
+                            Name: Ladd-Peebles Stadium
+                        Neighbourhoods:
+                          - LocationId: 73
+                            Code: NU
+                            Name: Nuussuaq
+          headers: {}
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+        '500':
+          description: Unknown Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+      security: []
   /content/GetUnmappedProviderHotels:
     post:
       summary: Get Unmapped Provider Hotels
       deprecated: false
-      description: >
-        Returns the list of hotels which are failed to get mapped while
-        performing mapping operation.
+      description: >-
+        Returns a paginated list of provider hotels that could not be matched to a Vervotech ID during the mapping process.
       operationId: content/GetUnmappedProviderHotels
       tags:
         - Hotel Mapping/Provider Content
@@ -2000,15 +2117,14 @@ paths:
             default: 10
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2080,9 +2196,8 @@ paths:
     post:
       summary: Get Unmapped Provider Hotels V2
       deprecated: false
-      description: >
-        Returns the list of hotels which are failed to get mapped while
-        performing mapping operation.
+      description: >-
+        Returns a paginated list of provider hotels that could not be matched to a Vervotech ID during the mapping process. This is an enhanced version with additional filtering capabilities.
       operationId: content/GetUnmappedProviderHotelsV2
       tags:
         - Hotel Mapping/Provider Content
@@ -2102,27 +2217,24 @@ paths:
         - name: resumeKey
           in: query
           description: >-
-            This is an encoded string, used in API's where incremental sync of
-            content is required. This encoded string contains the details of
-            your current API call and when it is passed in the header, the
-            server returns next new records based on resumeKey value. When
-            ResumeKey is returned as null it means there are no further records
-            available to fetch. ResumeKey has an expiry duration of 14 days.
+            An encoded pagination token for incremental data retrieval.
+            Pass the resumeKey from the previous response to fetch the next
+            page of results. A null value indicates no further records are
+            available. The resumeKey expires after 14 days.
           required: false
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2195,10 +2307,8 @@ paths:
     post:
       summary: Create Unmapped Provider Hotels File
       deprecated: false
-      description: >
-        Creates file in .csv format which includes list of hotels which are
-        failed to get mapped while performing mapping operation and the file is
-        sent to you by email.
+      description: >-
+        Generates a CSV file containing all provider hotels that could not be matched during the mapping process. The file is delivered to the specified email address.
       operationId: content/CreateUnmappedProviderHotelsFile
       tags:
         - Hotel Mapping/Provider Content
@@ -2206,15 +2316,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2284,11 +2393,10 @@ paths:
       security: []
   /accountconfig/GetAllProviderNames:
     get:
-      summary: Get All Provider names
+      summary: Get All Provider Names
       deprecated: false
-      description: >
-        Returns the list of all the master provider names which exists on
-        vervotech.
+      description: >-
+        Returns the complete list of master provider names available on the Vervotech platform.
       operationId: accountconfig/GetAllProviderNames
       tags:
         - Hotel Mapping/Provider Content
@@ -2296,15 +2404,14 @@ paths:
       parameters:
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -2362,11 +2469,10 @@ paths:
       security: []
   /content/GetProviderContentByProviderHotelIds:
     post:
-      summary: Get Provider Content By Provider Hotel Ids
+      summary: Get Provider Content by Provider Hotel IDs
       deprecated: false
-      description: >
-        This returns complete hotel details for the requested provider hotel id
-        and provider name.
+      description: >-
+        Returns the complete raw hotel content from the provider for the specified provider hotel IDs and provider family names.
       operationId: content/GetProviderContentByProviderHotelIds
       tags:
         - Hotel Mapping/Provider Content
@@ -2374,15 +2480,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2390,7 +2495,7 @@ paths:
         - name: language
           in: header
           description: |
-            See [References - Supported Langauages](#tag/References)
+            See [References - Supported Languages](#tag/References)
             <br>Example: `en-US`
           required: false
           example: ''
@@ -2464,11 +2569,10 @@ paths:
       security: []
   /content/GetProviderContentByVervotechIds:
     post:
-      summary: Get Provider Content By Vervotech Ids
+      summary: Get Provider Content by Vervotech IDs
       deprecated: false
-      description: >
-        This returns complete hotel details for the requested Vervotech mapping
-        ids.
+      description: >-
+        Returns the complete raw hotel content from all associated providers for the specified Vervotech mapping IDs.
       operationId: content/GetProviderContentByVervotechIds
       tags:
         - Hotel Mapping/Provider Content
@@ -2476,15 +2580,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2556,12 +2659,10 @@ paths:
       security: []
   /api/Location/getLocationById:
     get:
-      summary: Get Location By ID
+      summary: Get Location by ID
       deprecated: false
       description: >-
-        Fetches specific location details by locationId, including full name,
-        coordinates, city/state/country, boundaries, and data source. The data
-        is sourced from OpenStreetMap.
+        Returns detailed location information for the specified location ID, including full name, coordinates, city/state/country hierarchy, geographic boundaries, and data source. Location data is sourced from OpenStreetMap.
       tags:
         - Hotel Mapping/Location Content
         - Location
@@ -2574,14 +2675,14 @@ paths:
             type: string
         - name: apikey
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The api key for your account.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2599,17 +2700,16 @@ paths:
                   message:
                     type: string
                     description: >-
-                      A human readable message giving details depending upon
-                      type of API type or call status.
+                      A human-readable message providing details about the API
+                      call status.
                     nullable: true
                   statusCode:
                     type: integer
                     format: int32
                   location:
                     description: >-
-                      Boolean value indicating the response status of the API.
-                      For example, If the return value is true, it means API
-                      call was successful.
+                      The location object containing detailed geographic
+                      information for the requested location ID.
                     type: object
                     properties:
                       coordinates:
@@ -2689,21 +2789,22 @@ paths:
     post:
       summary: Get All Locations
       deprecated: false
-      description: This API returns a list of locations using OpenStreetMap data.
+      description: >-
+        Returns a paginated list of all locations with details including coordinates, boundaries, and geographic hierarchy. Location data is sourced from OpenStreetMap.
       tags:
         - Hotel Mapping/Location Content
         - Location
       parameters:
         - name: apikey
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The api key for your account.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2750,120 +2851,78 @@ paths:
       security: []
   /hotels/ReviewMappingsOfBookedHotelsByFile:
     get:
-      summary: Review Mappings of Booked Hotels By File
+      summary: Review Mappings of Booked Hotels by File
       deprecated: false
       description: >
-        This feature workflow allows you to upload mappings and get them
-        re-verified. It’s recommended to upload daily booked Vervotech Mappings
-        ids for the verification. Just in case we find any incorrect mapping, we
-        will notify
-
-        you via email over a registered email so that you can take appropriate
-        actions with that specific booking. Please share an email id with us
-        where you want to get such notifications from Vervotech Mappings.
+        Verifies hotel mappings for booked properties by processing a CSV file uploaded to SFTP. It is recommended to upload daily booked Vervotech mapping IDs for verification. If an incorrect mapping is detected, you will be notified via your registered email address.
 
 
-        #### Step 1 - Prepare input file :
+        ---
 
 
-        * Please refer this input template file with sample record here,
+        #### Step 1: Prepare the Input File
 
 
-        <div align="center">
-
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/VerifyMappingsForBookings_Result.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>
-
-        </div>
+        [Download input template](https://hotelmapping.vervotech.com/documentation/VerifyMappingsForBookings_Result.csv)
 
 
-        * The file extension must be .csv.
+        **Requirements:**
 
-        * Use comma(,) as separator and double quotes (") as delimiter
-        character.
+        - File extension must be `.csv`
 
-        * All the columns from the content template file must be present in your
-        content file.
+        - Use comma (`,`) as separator and double quotes (`”`) as delimiter
 
-        * Make sure the column names in your input file match exactly with the
-        column names in template file. The column names are case sensitive.
+        - All template columns must be present; column names are case-sensitive
 
-        * Please invalid/junk values for any of the content fields like “NULL”,
-        “null”, “ “ etc.
+        - Do not include invalid values such as `NULL`, `null`, or whitespace
 
 
-        #### Step 2 - Upload input file to FTP:
+        **Input columns:**
 
 
-        ##### Step 2.1
-
-        * Connect to the FTP site using any FTP client.
-
-
-        ##### Step 2.2
-         Create new folders at the root of the FTP site. The format of the folder should be like this,
-
-        [FTP Root]/VerifyMappings/[MonthYear]/[FullDate].csv
-
-
-        * MonthYear(Path): [MonthYear] format should be MMYYYY.
-
-        * FullDate (Path): [FullDate] format should be DDMMYYYY.
-
-        * Vervotech Mappings Id (Column) : Vervotech Mappings Id on which
-        booking is happened. Its mandatory.
-
-        * BookingReferenceId (Column) : This column in the csv is a booking id
-        from client's system just for a reference purpose and its optional. 
-
-        * BookingClientName (Column) : Client name where booking is happened.
-        Optional field.
-
-        * ProviderName (Column) : Provider name on which booking is done.
-        Optional field.
-
-        * ProviderHotelId (Column) : Provider hotel id. Optional field.
-
-        * CheckInDate (Column) : Booking check-in date just for a reference
-        purpose and its optional. Format is DDMMYYYY. 
-
-        * CheckOutDate (Column) : Booking check-out date just for a reference
-        purpose and its optional. Format is DDMMYYYY. 
+        | Column | Required | Description |
+        |--------|----------|-------------|
+        | Vervotech Mappings Id | Yes | Vervotech ID of the booked property |
+        | BookingReferenceId | No | Booking reference from your system |
+        | BookingClientName | No | Client name for the booking |
+        | ProviderName | No | Provider name for the booking |
+        | ProviderHotelId | No | Provider hotel ID |
+        | CheckInDate | No | Check-in date (format: DDMMYYYY) |
+        | CheckOutDate | No | Check-out date (format: DDMMYYYY) |
 
 
-        Sample path: "VerifyMappings/102020/18102020.csv"
+        ---
 
 
-        #### Step 3 - Trigger verification flow:
+        #### Step 2: Upload to SFTP
 
 
-        * Trigger the verification process by invoking a web service, 
+        1. Connect to the SFTP server using any SFTP client.
 
-        https://docs.vervotech.com/review-mappings-of-booked-hotels-by-file-16383698e0
+        2. Create the directory path: `[FTP Root]/VerifyMappings/[MMYYYY]/[DDMMYYYY].csv`
 
-
-        #### Step 4 - Read output file:
-
-
-        * Verification result file will be uploaded in same folder of input
-        file.
-
-        * Format of result file name will be [FTP
-        Root]/VerifyMappings/[MonthYear]/[FullDate]_Result.csv
-
-        * Sample output file template 
+        3. Upload your file. Example path: `VerifyMappings/102020/18102020.csv`
 
 
-        <div align="center">
+        ---
 
-        <a
-        href="https://hotelmapping.vervotech.com/documentation/VerifyMappingsForBookings_Result.csv">
-          <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15">
-        </a>
 
-        </div>
+        #### Step 3: Trigger Verification
+
+
+        Call this API endpoint with the `ftpFilePath` parameter pointing to your uploaded file.
+
+
+        ---
+
+
+        #### Step 4: Retrieve Results
+
+
+        The result file is uploaded to the same SFTP directory as the input file, with the naming convention: `[FullDate]_Result.csv`
+
+
+        [Download output template](https://hotelmapping.vervotech.com/documentation/VerifyMappingsForBookings_Result.csv)
       operationId: hotels/ReviewMappingsOfBookedHotelsByFile
       tags:
         - Hotel Mapping/Operational APIs
@@ -2878,15 +2937,14 @@ paths:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -2940,16 +2998,8 @@ paths:
     post:
       summary: Review Mappings of Booked Hotels
       deprecated: false
-      description: >
-        This feature workflow allows you to check the hotel mappings for each
-        hotel by sending the data in the request body.
-
-        Just in case we find any incorrect mapping, we will notify you via email
-        over a registered email so that you can take appropriate actions with
-        that specific booking.
-
-        Please share an email id with us where you want to get such
-        notifications from Vervotech Mappings.
+      description: >-
+        Verifies hotel mappings for booked properties by submitting booking data directly in the request body. If an incorrect mapping is detected, you will be notified via your registered email address so that you can take appropriate action on the affected booking.
       operationId: hotels/ReviewMappingsOfBookedHotels
       tags:
         - Hotel Mapping/Operational APIs
@@ -2957,15 +3007,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -3025,252 +3074,134 @@ paths:
       security: []
   /mappings/StartMappingByFtpFolder:
     get:
-      summary: Start Mapping By Ftp Folder
+      summary: Start Mapping by SFTP Folder
       deprecated: false
-      description: >+
-
-        Please follow the following steps in sequence
-
-
-        ### Step 1 - Prepare hotel content files:
-
-
-        1. Please refer the content hotel static content file template here:
-
-        <div align="right">
-          <a href="https://hotelmapping.vervotech.com/documentation/unica-mapping-content-template.csv">
-            <img src="https://api.apidog.com/api/v1/projects/898598/resources/358876/image-preview" alt="ddd 2.png" width="100" height="15" />
-          </a>
-        </div> 
-
-
-        2. The file extension must be .csv.
-
-
-        3. All the columns from the content template file must be present in
-        your content file.
-
-
-        4. Create separate .csv file for each provider.
-
-
-        5. Make sure the column names in your content file are matching exactly
-        with the column names in Vervotech Mappings content template file.
-
-
-        6. The column names are case sensitive.
-
-
-        7. Make sure there are no invalid/junk values like for any of the
-        content fields. For example, "NULL", "null", " " etc.
-
-
-        Following are the columns included in the template:
-
-
-        - **SupplierName:** Required. The name of the provider providing that
-        hotel. This must be from the master Vervotech Mappings master provider
-        names:
-        [GetAllProviderNames](https://docs.vervotech.com/get-all-provider-names-16383705e0)
-
-
-        - **SupplierHotelId:** Required. This would be the property's ID,
-        provided to you by the provider.
-
-
-        - **HotelName:** Required. Name of the property.
-
-
-        - **Line1:** Required. Property's address line 1.
-
-
-        - **Line2:** Property's address line 2.
-
-
-        - **CityName:** Required. Name of the city where the property is
-        located.
-
-
-        - **CityCode:** Optional. Code for the city/location where the property
-        is located.
-
-
-        - **StateName:** Name of the state where the property is located.
-
-
-        - **StateCode:** Code of the state where the property is located.
-
-
-        - **ZipCode:** Required. Zip code of the property.
-
-
-        - **CountryName:** Either one of CountryName or CountryCode is required.
-        Name of the country where the property is located. Either one of the
-        CountryName and CountryCode is sufficient.
-
-
-        - **CountryCode:** Either one of CountryName or CountryCode is required.
-        ISO country code where the property is located.
-
-
-        - **StarRating:** Required. Star ratings of the property.
-
-
-        - **Lat:** Required. Latitude of the property.
-
-
-        - **Long:** Required. Longitude of the property
-
-
-        - **ChainCode:** Optional. Information about the chain code.
-
-
-        - **Phones:** Property's phone numbers.
-
-
-        - **Fax:** Property's fax number.
-
-
-        - **Email:** Property's email address.
-
-
-        - **Website:** Property's official website address.
-
-
-        - **PropertyType:** Hotel property type. E.g.: - Motel, Resort, Villa,
-        etc.
+      description: >
+        Triggers the hotel mapping process for provider content files uploaded to the SFTP server. Follow the steps below to prepare, upload, and initiate mapping.
 
 
         ---
 
 
-        ### Step 2 - Upload the hotel content files to SFTP site:
+        ### Step 1: Prepare Hotel Content Files
 
 
-        #### Step 2.1: Connect to the SFTP server.
+        [Download content template](https://hotelmapping.vervotech.com/documentation/unica-mapping-content-template.csv)
 
 
-        Connect to the FTP site using any FTP client. You can get the FTP
-        credentials from Vervotech client portal under "Load Provider Content".
+        **Requirements:**
+
+        - File extension must be `.csv`
+
+        - Create a separate file for each provider
+
+        - Column names must match the template exactly (case-sensitive)
+
+        - Do not include invalid values such as `NULL`, `null`, or whitespace
 
 
-
-        ![ShowFTPCredentials.PNG](https://api.apidog.com/api/v1/projects/898598/resources/369085/image-preview)
-
-        #### Step 2.2: Create folder path for files.
+        **Template columns:**
 
 
-        Create new folders at the root of the FTP site. You can tools like
-        FileZilla or any other SFTP client. Alternatively, you can use any
-        programming client.
+        | Column | Required | Description |
+        |--------|----------|-------------|
+        | SupplierName | Yes | Provider name from the [master list](https://docs.vervotech.com/get-all-provider-names-16383705e0) |
+        | SupplierHotelId | Yes | Property ID from the provider |
+        | HotelName | Yes | Property name |
+        | Line1 | Yes | Address line 1 |
+        | Line2 | No | Address line 2 |
+        | CityName | Yes | City name |
+        | CityCode | No | City/location code |
+        | StateName | No | State name |
+        | StateCode | No | State code |
+        | ZipCode | Yes | Postal/zip code |
+        | CountryName | Conditional | Country name (either CountryName or CountryCode is required) |
+        | CountryCode | Conditional | ISO country code (either CountryName or CountryCode is required) |
+        | StarRating | Yes | Star rating |
+        | Lat | Yes | Latitude |
+        | Long | Yes | Longitude |
+        | ChainCode | No | Hotel chain code |
+        | Phones | No | Phone numbers |
+        | Fax | No | Fax number |
+        | Email | No | Email address |
+        | Website | No | Official website URL |
+        | PropertyType | No | Property type (e.g., Hotel, Motel, Resort, Villa) |
 
 
-        The directory path of the folder should be in following format:
+        ---
 
 
-        **[FTP Root]/[DATE]/[ProviderName]/[ProviderKey]**
+        ### Step 2: Upload Files to SFTP
 
 
-        FTP Folder path essentially has 3 components:
+        **2.1** Connect to the SFTP server using any SFTP client. Retrieve credentials from the Vervotech client portal under **Load Provider Content**.
 
 
-        1. **Date:** The [DATE] format should be DDMMYYYY.
+        **2.2** Create the directory structure at the SFTP root:
 
 
-        2. **ProviderName:** The name of the provider. This must be one of the
-        provider name from the master Vervotech Mappings master provider names: 
-        [GetAllProviderNames](https://docs.vervotech.com/get-all-provider-names-16383705e0)
-
-           If the provider name is not present in the master provider list, please contact Vervotech Mappings support team at [Vervotech Support](https://support.vervotech.com/support/tickets)
-
-        3. **ProviderKey:** This will be provided by the Vervotech Mappings team
-        for each provider. You can get the FTP credentials from Vervotech client
-        portal under "Manage Your Providers" tab as shown below.
-
-          ![ProviderKey.PNG](https://api.apidog.com/api/v1/projects/898598/resources/369083/image-preview)
-
-        #### Step 2.3: Upload the file to SFTP server
+        `[FTP Root]/[DATE]/[ProviderName]/[ProviderKey]`
 
 
-        You can upload multiple provider files in single SFTP folder. The
-        provider file name can be in any format. However, we recommend placing
-        only one file per folder.
+        | Component | Format | Description |
+        |-----------|--------|-------------|
+        | DATE | DDMMYYYY | Upload date |
+        | ProviderName | String | Provider name from the [master list](https://docs.vervotech.com/get-all-provider-names-16383705e0). Contact [Vervotech Support](https://support.vervotech.com/support/tickets) if not listed. |
+        | ProviderKey | String | Provider key from the Vervotech client portal under **Manage Your Providers**. |
 
 
-        **Examples:**
+        **2.3** Upload one CSV file per folder (recommended). Example paths:
 
         ```
-
         18122022/HotelBeds/accountId__accountId__HotelBeds/HotelBedsProperties.csv
-
         18122022/Priceline/accountId__accountId__Priceline/PricelineProperties.csv
-
         18122022/EAN/accountId__accountId__EAN/EANProperties.csv
-
         ```
 
 
         ---
 
 
-        ### Step 3 - Trigger the hotel mapping using Client Portal:
+        ### Step 3: Trigger Mapping via Client Portal
 
 
-        1. Login to Vervotech Mappings client portal.
+        1. Log in to the Vervotech client portal.
 
+        2. Navigate to **Load Provider Content**.
 
-        2. Go to "Load Provider Content" in the navigation pane.
+        3. Enter the full SFTP folder path and click **Start Mapping**.
 
-
-        3. Enter the full FTP path URL in the "SFTP Folder Path" text box.
-
-
-        4. Click on the "Start Mapping" button. You should see multiple unique
-        identifier/number (RunId) on the screen for your mapping request. There
-        will be unique RunId generated for each file from your upload directory.
-
-
-        5. The processing of the file must be completed before uploading any new
-        files.
+        4. A unique RunId is generated for each file. Wait for processing to complete before uploading new files.
 
 
         ---
 
 
-        ### Step 4 - Review mapping progress for your files:
+        ### Step 4: Monitor Progress
 
 
-        You can check the status of any of the mapping against any RunId which
-        you have triggered. Go to "Providers Content Processing" and see the
-        progress of any RunId.
-
-
-        ---
-
-
-        ### Step 5 - Trigger the hotel mapping using APIs:
-
-
-        1. The entire process of uploading the files can be automated
-        programtically using SFTP client.
-
-
-        2. Once the files are uploaded, integrate with
-        https://hotelmapping.vervotech.com/api/3.0/mappings/StartMappingByFtpFolder.
-
-
-        3. The input to this web service is mainly the FTP upload directory
-        path.
-
-
-        4. Trigger the hotel mapping request by invoking this web service.
+        Check mapping progress under **Providers Content Processing** in the client portal using the RunId.
 
 
         ---
 
 
+        ### Step 5: Trigger Mapping via API
 
-      operationId: mappings/Start Mapping By Ftp Folder
+
+        Automate the workflow programmatically:
+
+        1. Upload files using an SFTP client.
+
+        2. Call this API with the SFTP folder path as input.
+
+        3. The response includes a RunId for tracking progress.
+
+
+        ---
+
+
+      operationId: mappings/StartMappingByFtpFolder
       tags:
         - Hotel Mapping/Operational APIs
         - Operational APIs
@@ -3293,15 +3224,14 @@ paths:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -3366,15 +3296,10 @@ paths:
       security: []
   /mappings/GetMappingHistoryByRunId:
     post:
-      summary: Get Mappings History By RunId
+      summary: Get Mapping History by Run ID
       deprecated: false
-      description: >
-        This provides all the mapping stats of specific run id with respect to
-        specified provider.
-
-        Users need to send a combination of run id and provider name ,and
-        mappings stats belonging to that run id and provider family would be
-        given in response.
+      description: >-
+        Returns mapping statistics for a specific mapping run, identified by the RunId and provider family name. Use this to track the progress and results of a previously initiated mapping job.
       operationId: mappings/GetMappingHistoryByRunId
       tags:
         - Hotel Mapping/Operational APIs
@@ -3382,15 +3307,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -3460,10 +3384,8 @@ paths:
     post:
       summary: Find Match
       deprecated: false
-      description: >
-        This API allows you to find matched hotels based on the provided
-        parameters. You need to provide the hotel name and location to get a
-        potential match.
+      description: >-
+        Finds matching hotels across specified providers based on hotel name, address, and coordinates. Submit hotel details in the request body to receive potential matches in real time. This is useful for on-demand mapping of hotels not yet present in the system.
       operationId: mappings/FindMatch
       tags:
         - Hotel Mapping/Dynamic Mapping APIs
@@ -3471,15 +3393,14 @@ paths:
       parameters:
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
@@ -3620,11 +3541,10 @@ paths:
       security: []
   /ProviderMappings/GetMappingsByProviderHotelId:
     get:
-      summary: Get Mappings by Provider Hotel Id.
+      summary: Get Mappings by Provider Hotel ID
       deprecated: false
-      description: >
-        This API returns the mappings based on  provider hotel Id and provider
-        name.
+      description: >-
+        Returns cross-provider hotel mappings for a specific property, identified by provider hotel ID and provider name.
       operationId: Mapping/GetMappingsByProviderHotelId
       tags:
         - Hotel Mapping/Dual Mapping APIs
@@ -3644,15 +3564,14 @@ paths:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -3701,11 +3620,10 @@ paths:
       security: []
   /ProviderMappings/GetMappingsWithContentByProviderHotelId:
     get:
-      summary: Get Mappings with content by Provider Hotel Id.
+      summary: Get Mappings with Content by Provider Hotel ID
       deprecated: false
-      description: >
-        This API returns the mappings and curated content based on provider
-        hotel Id and provider name.
+      description: >-
+        Returns cross-provider hotel mappings along with curated content for a specific property, identified by provider hotel ID and provider name.
       operationId: Mapping/GetMappingsWithContentByProviderHotelId
       tags:
         - Hotel Mapping/Dual Mapping APIs
@@ -3725,15 +3643,14 @@ paths:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -3784,11 +3701,10 @@ paths:
       security: []
   /ProviderMappings/GetDualMappingAPIStats:
     get:
-      summary: Get summary for your dual mapping APIs
+      summary: Get Dual Mapping API Statistics
       deprecated: false
       description: >-
-        This API returns the summary of Dual Mappings API, filtered by account
-        Id, from and to date range.
+        Returns usage statistics for the Dual Mapping APIs, filtered by account ID and an optional date range. Use this to monitor API consumption.
       operationId: Mapping/GetDualMappingAPIStats
       tags:
         - Hotel Mapping/Dual Mapping APIs
@@ -3796,33 +3712,32 @@ paths:
       parameters:
         - name: clientAccountId
           in: query
-          description: The account Id to get stats
+          description: The client account ID for which to retrieve statistics.
           required: true
           schema:
             type: number
         - name: FromDate
           in: query
-          description: Statistics of API from required date.
+          description: Start date for the statistics date range.
           required: false
           schema:
             type: string
         - name: ToDate
           in: query
-          description: Statistics of API till the  required date.
+          description: End date for the statistics date range.
           required: false
           schema:
             type: string
         - name: accountId
           in: header
-          description: The account id of your registered account in Vervotech Mappings.
+          description: The account ID of your registered account in Vervotech Mappings.
           required: true
           example: DemoAccount
           schema:
             type: string
         - name: apikey
           in: header
-          description: |
-            The api key for your account.
+          description: The API key for your account.
           required: true
           example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
           schema:
@@ -3884,11 +3799,7 @@ paths:
       summary: Map Rooms
       deprecated: false
       description: >-
-        The 2.0 room mapping API to map different providers rooms for a single
-        hotel. This API accepts all the rooms coming from different providers
-        for any particular hotel as a input. Each room in the input should be
-        marked uniquely. The API return the mapping between these input rooms in
-        the response.
+        Maps rooms from multiple providers for a single hotel into standardized room categories. Submit all rooms from different providers for a given hotel, each identified by a unique index. The API returns grouped room mappings with standardized names, bed types, views, and amenities.
       operationId: room-mapping-2.0
       tags:
         - Room Mapping/Mapping API
@@ -3897,9 +3808,8 @@ paths:
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: demoAccount
           schema:
@@ -3908,9 +3818,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: jansdv-859n kj2-nmsdv
           schema:
@@ -3919,9 +3828,8 @@ paths:
         - name: correlationId
           in: header
           description: >-
-            This should be unique to the each call made to room mapping API.
-            This can be useful to report/investigate any issues with room
-            mapping API.
+            A unique identifier for this API call. Used for troubleshooting
+            and issue investigation. Generate a new value for each request.
           required: true
           example: test123
           schema:
@@ -3929,12 +3837,10 @@ paths:
             example: 056ec4c3-be6b-4c36-a4cc-a403ce9592a1
         - name: culture
           in: header
-          description: >
-            See [References - Supported Langauages](#tag/References)
-
-            <br>Example: `This represents the cultural localization. By default
-            it is set to 'en-US' (english), if set to 'es-ES'(Spanish), mappings
-            would be performed in Spanish language format.`
+          description: >-
+            Language/locale for room mapping. Defaults to `en-US` (English).
+            Set to another locale (e.g., `es-ES` for Spanish) to perform
+            mappings in that language. See [Supported Languages](#tag/References).
           required: false
           example: en-US
           schema:
@@ -4270,8 +4176,7 @@ paths:
       summary: Get Master Room Amenities
       deprecated: false
       description: >-
-        Returns the list of master room ameneties content available with
-        Vervotech Mappings team
+        Returns the complete list of standardized room amenities available in the Vervotech room mapping system.
       operationId: hotels/GetMasterRoomAmenities
       tags:
         - Room Mapping/Mapping API
@@ -4280,9 +4185,8 @@ paths:
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4291,9 +4195,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4333,8 +4236,7 @@ paths:
       summary: Get Master Room Attributes
       deprecated: false
       description: >-
-        Returns the list of master room attributes with possible valid values of
-        them available with Vervotech Mappings team
+        Returns the complete list of standardized room attributes (e.g., SmokingAllowed, HasBalcony) with their valid values.
       operationId: hotels/GetMasterRoomAttributes
       tags:
         - Room Mapping/Mapping API
@@ -4343,9 +4245,8 @@ paths:
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4354,9 +4255,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4400,7 +4300,8 @@ paths:
     get:
       summary: Get Provider Names
       deprecated: false
-      description: Returns the list of active provider names available with account.
+      description: >-
+        Returns the list of active provider names configured for your room mapping account.
       operationId: hotels/GetProviderNames
       tags:
         - Room Mapping/Mapping API
@@ -4409,9 +4310,8 @@ paths:
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4420,9 +4320,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4456,8 +4355,7 @@ paths:
       summary: Get All Provider Names
       deprecated: false
       description: >-
-        Returns the list of all the provider names available with the Vervotech
-        Mappings team.
+        Returns the complete list of all provider names available on the Vervotech room mapping platform.
       operationId: hotels/GetAllProviderNames
       tags:
         - Room Mapping/Mapping API
@@ -4466,9 +4364,8 @@ paths:
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4477,9 +4374,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4515,11 +4411,10 @@ paths:
       security: []
   /api/2.0/mapping/getmappingasync:
     post:
-      summary: Get Async Room Mapping API Response
+      summary: Get Async Room Mapping Response
       deprecated: false
       description: >-
-        The async room mapping API to helps to get the room mapping api
-        response.
+        Retrieves the room mapping results for a previously submitted asynchronous mapping request. Use the `traceId` returned from the [Map Large Rooms Async](#operation/async-room-mapping) endpoint.
       operationId: get-async-room-mapping
       tags:
         - Room Mapping/Async Room Mapping API
@@ -4527,16 +4422,16 @@ paths:
       parameters:
         - name: traceId
           in: query
-          description: traceId returned from maproomsasync api response
+          description: >-
+            The trace ID returned from the Map Large Rooms Async API response.
           required: true
           schema:
             type: string
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4545,9 +4440,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4581,11 +4475,7 @@ paths:
       summary: Map Large Rooms Async
       deprecated: false
       description: >-
-        Current Room Mapping API has default imit of 1000 rooms per request, so
-        the new functionality will allow customers to get the mapping result for
-        large room requests asynchronously,The API will return the traceId, this
-        will be the input parameter to fetch room mapping response using
-        "api/2.0/mapping/getmappingasync" endpoint.
+        Submits a large room mapping request for asynchronous processing. The standard room mapping API has a limit of 1,000 rooms per request; this endpoint handles larger datasets. The response includes a `traceId` that can be used to retrieve results via the [Get Async Room Mapping Response](#operation/get-async-room-mapping) endpoint.
       operationId: async-room-mapping
       tags:
         - Room Mapping/Async Room Mapping API
@@ -4594,9 +4484,8 @@ paths:
         - name: accountId
           in: header
           description: >-
-            The accountId for your account. The accountId for the demo/testing
-            purposes is "demoAccount". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping account ID. Use `demoAccount` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4605,9 +4494,8 @@ paths:
         - name: token
           in: header
           description: >-
-            The API token for your account. The accountId for the demo/testing
-            purposes is "demoApiToken". This will be provided by the Vervotech
-            mappings team for your account.
+            Your Vervotech room mapping API token. Use `demoApiToken` for
+            testing.
           required: true
           example: ''
           schema:
@@ -4615,12 +4503,10 @@ paths:
             example: demoApiToken
         - name: culture
           in: header
-          description: >
-            See [References - Supported Langauages](#tag/References)
-
-            <br>Example: `This represents the cultural localization. By default
-            it is set to 'en-US' (english), if set to 'es-ES'(Spanish), mappings
-            would be performed in Spanish language format.`
+          description: >-
+            Language/locale for room mapping. Defaults to `en-US` (English).
+            Set to another locale (e.g., `es-ES` for Spanish) to perform
+            mappings in that language. See [Supported Languages](#tag/References).
           required: false
           example: ''
           schema:
@@ -4659,15 +4545,7 @@ paths:
       summary: Get All Master Board Basis
       deprecated: false
       description: >-
-        This endpoint retrieves a complete list of standardized Board Basis
-        definitions used across Room Mapping.
-
-        It returns all supported meal plan standards. such as *Room Only, Bed &
-        Breakfast, Half Board, etc. Along with their codes, descriptions,
-        aliases, and included meals*.
-
-        These standards help ensure consistent classification of board basis
-        terms received from multiple suppliers.
+        Returns the complete list of standardized board basis definitions used in room mapping. Each definition includes the standard code, name, description, aliases, and included meals (e.g., Room Only, Bed and Breakfast, Half Board). Use this as a reference for mapping supplier meal plan terminology.
       tags:
         - Room Mapping/Board Basis Mappings
       parameters:
@@ -4834,24 +4712,10 @@ paths:
       security: []
   /api/2.0/Mapping/map-board-basis:
     post:
-      summary: Map Board Basis API
+      summary: Map Board Basis
       deprecated: false
       description: >-
-        This endpoint takes a list of raw board basis terms from suppliers (such
-        as *“Continental Breakfast”, “Half Board”, “Breakfast Included”*) and
-        maps them to Vervotech’s standardized Board Basis Standards.
-         It helps ensure consistency across various provider meal plan terminologies by returning structured data containing:
-        - The matched board basis standard
-
-        - The standardized code (e.g., BB, HB)
-
-        - Descriptions and included meals
-
-        - Matching confidence or mapping outcome
-
-
-        This API is typically used after extracting board basis text from room
-        names or rate descriptions.
+        Maps raw board basis terms from suppliers (e.g., “Continental Breakfast”, “Half Board”, “Breakfast Included”) to Vervotech standardized board basis codes. The response includes the matched standard code (e.g., BB, HB), standard name, and match rate statistics. Typically used after extracting board basis text from room names or rate descriptions.
       tags:
         - Room Mapping/Board Basis Mappings
       parameters:
@@ -4989,7 +4853,8 @@ components:
           description: Provider Hotel Id.
           example: '3434358'
         VervotechId:
-          type: number
+          type: integer
+          format: int32
           description: Vervotech Mappings hotel id for the hotel.
           example: 16042757
         LanguageCode:
@@ -5005,7 +4870,8 @@ components:
           description: Provider name.
           example: EAN
         Rating:
-          type: float
+          type: number
+          format: float
           description: Information about the property’s rating.
           example: 2
         BrandName:
@@ -5216,7 +5082,8 @@ components:
             description: Information about the user's rating
             properties:
               Rating:
-                type: float
+                type: number
+                format: float
                 description: rating for the property.
                 example: 4
               Count:
@@ -5540,7 +5407,8 @@ components:
         type: object
         properties:
           VervotechId:
-            type: number
+            type: integer
+            format: int32
             description: Vervotech Mappings hotel id for the hotel.
             example: 16042757
           Name:
@@ -5591,10 +5459,12 @@ components:
             example: '3880'
           Latitude:
             type: number
+            format: float
             description: Property's Latitude
             example: 25.771112
           Longitude:
             type: number
+            format: float
             description: Property's Longitude
             example: -80.27933
           Website:
@@ -5947,7 +5817,8 @@ components:
         type: object
         properties:
           VervotechId:
-            type: number
+            type: integer
+            format: int32
             description: Vervotech Mappings hotel id for the hotel.
             example: 16042757
           Name:
@@ -5998,10 +5869,12 @@ components:
             example: '3880'
           Latitude:
             type: number
+            format: float
             description: Property's Latitude
             example: 25.771112
           Longitude:
             type: number
+            format: float
             description: Property's Longitude
             example: -80.27933
           Website:
@@ -6167,7 +6040,8 @@ components:
         Message:
           $ref: '#/components/schemas/Message'
         MappingCount:
-          type: number
+          type: integer
+          format: int64
           description: >-
             Total count of hotels for new, updated and deleted the requested
             account.
@@ -6214,7 +6088,8 @@ components:
         type: object
         properties:
           UnicaId:
-            type: number
+            type: integer
+            format: int32
             description: Vervotech Mappings hotel id for the hotel.
             example: 1212
           BookingReferenceId:
@@ -6234,10 +6109,12 @@ components:
             description: Provider hotel id.
             example: 6377153
           CheckInDate:
-            type: date
+            type: string
+            format: date
             description: Check-in Date.
           CheckOutDate:
-            type: date
+            type: string
+            format: date
             description: Check Out Date.
           IsCorrectMapping:
             type: boolean
@@ -6258,7 +6135,7 @@ components:
       $ref: '#/components/schemas/FacilityGroupFixtures'
     ProviderMappingsStats:
       type: array
-      description: '--'
+      description: Provider-level mapping statistics.
       items:
         type: object
         properties:
@@ -6267,26 +6144,36 @@ components:
             description: Indicates provider name.
             example: EAN
           DownloadedProperties:
-            type: number
-            description: Total number of downloaded properties.
+            type: integer
+            description: Total number of downloaded properties (computed as UnMappedProperties + TotalProperties).
           TotalProperties:
-            type: number
-            description: Total number of properties
-          NonUniqueProperties:
-            type: number
-            description: Total number of non-unique properties
-          UniqueProperties:
-            type: number
-            description: Total number of unique properties
+            type: integer
+            description: Total number of mapped properties.
           UnMappedProperties:
-            type: number
-            description: Total number of unmapped properties
+            type: integer
+            description: Total number of unmapped properties.
           DuplicateProperties:
-            type: number
-            description: Total number of duplicate properties
+            type: integer
+            description: Total number of duplicate properties.
           InvalidProperties:
-            type: number
-            description: Total number of invalid properties
+            type: integer
+            description: Total number of invalid properties.
+          UpdateInProcess:
+            type: boolean
+            nullable: true
+            description: Indicates whether an update is currently being processed for this provider.
+          ChannelStats:
+            type: array
+            description: Channel-level statistics for this provider.
+            items:
+              type: object
+              properties:
+                ChannelId:
+                  type: string
+                  description: Channel identifier.
+                ChannelCount:
+                  type: integer
+                  description: Number of properties in this channel.
     ProviderFacility:
       type: object
       properties:
@@ -6321,50 +6208,50 @@ components:
       $ref: '#/components/schemas/GetMasterHotelChainsResponse'
     MappingsStats:
       type: object
-      description: '--'
+      description: Mapping statistics for a specific run.
       properties:
         RunId:
           type: string
           description: The unique identifier for every mapping/processing request.
           example: f676e8a6-00b4-4231-8a1a-5a19d290837d
         MissingCountryCodes:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing country codes.
         MissingGeoCodes:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing geocodes.
         MissingHotelChains:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing hotel chain information.
         MissingPhones:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing phone numbers.
         MissingStarRatings:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing star ratings.
         MissingZipCodes:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing zip codes.
         MissingCity:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing city information.
         MissingFax:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing fax numbers.
         MissingName:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing hotel names.
         MissingState:
-          type: number
-          description: Number of missing country codes in given properties.
+          type: integer
+          description: Number of properties with missing state information.
         MissingAddress:
-          type: number
-          description: Number of missing address in given properties.
+          type: integer
+          description: Number of properties with missing address information.
         PublishCount:
-          type: number
+          type: integer
           description: The number of total properties published against this run id.
         TotalProviderCount:
-          type: number
+          type: integer
           description: The number of total properties processed.
         StorageFilePath:
           type: string
@@ -6381,13 +6268,22 @@ components:
         Status:
           type: string
           description: Mapping status of given run id.
+          enum:
+            - None
+            - InProcess
+            - Aborted
+            - ContentDownloadFinished
+            - Completed
+            - Failed
           example: Completed
         StartDate:
           type: string
+          format: date-time
           description: Start time of mapping process.
           example: '2022-09-12T10:03:57.134Z'
         EndDate:
           type: string
+          format: date-time
           description: End time of mapping process.
           example: '2022-09-12T11:30:07.219Z'
         WorkFlowType:
@@ -6397,9 +6293,10 @@ components:
             SupplierDownloader
           example: FTPDownloader
         DownloadStats:
-          type: object
-          description: processing stats summary.
-          properties: {}
+          type: array
+          description: Per-provider download and processing statistics.
+          items:
+            $ref: '#/components/schemas/Unica.Core.Contracts.Models.DownloadStats'
     Unica.Core.Contracts.Models.Billing.AccountUsageBalance:
       type: object
       additionalProperties: false
@@ -6425,7 +6322,8 @@ components:
         type: object
         properties:
           UnicaId:
-            type: number
+            type: integer
+            format: int32
             description: Vervotech Mappings hotel id for the hotel.
             example: 1212
           BookingReferenceId:
@@ -6445,11 +6343,13 @@ components:
             description: Provider hotel id.
             example: '6377153'
           CheckInDate:
-            type: date
+            type: string
+            format: date
             description: Check In Date.
             example: '2021-07-04'
           CheckOutDate:
-            type: date
+            type: string
+            format: date
             description: Check Out Date.
             example: '2021-07-04'
     ProviderRoomContent:
@@ -6992,23 +6892,26 @@ components:
           example: 2000
         Hotels:
           description: Hotel content
-          type: object
-          properties:
-            VervotechId:
-              type: number
-              description: Vervotech Mappings hotel id
-              example: 360800
-            ProviderHotels:
-              type: array
-              description: List of provider hotels
-              items:
-                $ref: '#/components/schemas/HotelContent'
+          type: array
+          items:
+            type: object
+            properties:
+              VervotechId:
+                type: integer
+                format: int32
+                description: Vervotech Mappings hotel id
+                example: 360800
+              ProviderHotels:
+                type: array
+                description: List of provider hotels
+                items:
+                  $ref: '#/components/schemas/HotelContent'
     MappedRoomRate:
       type: object
       description: Mapping information of the input rooms.
       properties:
         inputIndex:
-          type: number
+          type: integer
           description: Room index of any of the room from input rooms.
           example: 1
         roomCode:
@@ -7024,7 +6927,11 @@ components:
         refundability:
           type: string
           description: Room rate refundability.
-          example: Refundable
+          example: Refundable        
+        matchScore:
+          type: integer
+          description: Score indicating the confidence of the room mapping match.
+          example: 85        
         attributes:
           type: array
           description: >-
@@ -7048,7 +6955,8 @@ components:
         type: object
         properties:
           VervotechId:
-            type: number
+            type: integer
+            format: int32
             description: Vervotech mapping hotel Id.
             example: 39616423
           ProviderHotelId:
@@ -7068,6 +6976,120 @@ components:
             type: string
             description: Type of Mappings, whether it is new or updated.
             example: New
+          ChannelIds:
+            type: array
+            description: >-
+              ChannelIds list if provider is providing content with respect to
+              configured channel ids (e.g., Rate Plans).
+            items:
+              type: string
+              example: Priceline,CUG
+    NewHotelMapping:
+      type: array
+      description: Vervotech hotel id and newly added provider hotels ids list.
+      items:
+        type: object
+        properties:
+          VervotechId:
+            type: integer
+            format: int32
+            description: Vervotech mapping hotel Id.
+            example: 39616423
+          ProviderHotelId:
+            type: string
+            description: Provider hotel id.
+            example: OT000047524
+          ProviderName:
+            type: string
+            description: Name of hotel provider.
+            example: 24x7Rooms
+          ProviderLocationCode:
+            type: string
+            description: >-
+              Returns the location code for each mapping as supplied by the
+              provider (i.e.DestinationCode).
+          Type:
+            type: string
+            description: Type of Mapping. Always "New" for this endpoint.
+            example: New
+            enum:
+              - New
+          ChannelIds:
+            type: array
+            description: >-
+              ChannelIds list if provider is providing content with respect to
+              configured channel ids (e.g., Rate Plans).
+            items:
+              type: string
+              example: Priceline,CUG
+    UpdatedHotelMapping:
+      type: array
+      description: Vervotech hotel id and updated provider hotels ids list.
+      items:
+        type: object
+        properties:
+          VervotechId:
+            type: integer
+            format: int32
+            description: Vervotech mapping hotel Id.
+            example: 39616423
+          ProviderHotelId:
+            type: string
+            description: Provider hotel id.
+            example: OT000047524
+          ProviderName:
+            type: string
+            description: Name of hotel provider.
+            example: 24x7Rooms
+          ProviderLocationCode:
+            type: string
+            description: >-
+              Returns the location code for each mapping as supplied by the
+              provider (i.e.DestinationCode).
+          Type:
+            type: string
+            description: Type of Mapping. Always "Update" for this endpoint.
+            example: Update
+            enum:
+              - Update
+          ChannelIds:
+            type: array
+            description: >-
+              ChannelIds list if provider is providing content with respect to
+              configured channel ids (e.g., Rate Plans).
+            items:
+              type: string
+              example: Priceline,CUG
+    DeletedHotelMapping:
+      type: array
+      description: Vervotech hotel id and deleted provider hotels ids list.
+      items:
+        type: object
+        properties:
+          VervotechId:
+            type: integer
+            format: int32
+            description: Vervotech mapping hotel Id.
+            example: 39616423
+          ProviderHotelId:
+            type: string
+            description: Provider hotel id.
+            example: OT000047524
+          ProviderName:
+            type: string
+            description: Name of hotel provider.
+            example: 24x7Rooms
+          ProviderLocationCode:
+            type: string
+            description: >-
+              Returns the location code for each mapping as supplied by the
+              provider (i.e.DestinationCode).
+          Type:
+            type: string
+            description: Type of Mapping. Always "Delete" for this endpoint.
+            example: Delete
+            enum:
+              - Delete
           ChannelIds:
             type: array
             description: >-
@@ -7098,7 +7120,8 @@ components:
                 items:
                   $ref: '#/components/schemas/HotelContent'
               VervotechId:
-                type: number
+                type: integer
+                format: int32
                 description: Vervotech Mappings hotel id
                 example: 360800
     RoomMappingResponse2:
@@ -7170,6 +7193,10 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/Bed'
+              bedInfo:
+                type: string
+                description: Human-readable summary of bed configuration for the room.
+                example: 1 King Bed
               occupancyType:
                 type: string
                 description: >-
@@ -7320,14 +7347,14 @@ components:
             See [References - API Status codes](#tag/References)
     Bed:
       type: object
-      description: Information abouts the beds present in the rooms
+      description: Information about the beds present in the rooms.
       properties:
         type:
           type: string
-          description: Type of bed
+          description: Type of bed.
           example: King
         count:
-          type: number
+          type: integer
           description: Number of such beds.
           example: 1
     GetUpdatedCuratedContentResponse:
@@ -7372,6 +7399,15 @@ components:
       properties:
         ProviderMappingsStats:
           $ref: '#/components/schemas/ProviderMappingsStats'
+        UpdateInProcess:
+          type: boolean
+          nullable: true
+          description: Indicates whether a global mapping update is currently in progress.
+        LastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the last mapping statistics update.
         Status:
           $ref: '#/components/schemas/Status'
         Message:
@@ -7622,13 +7658,21 @@ components:
           description: The category of rating.
           example: cleanliness
         Rating:
-          type: float
+          type: number
+          format: float
           description: averaged rating from all guest reviews for specified category.
           example: 1.5
     GetProviderNamesResponse:
       type: object
       properties:
-        providerNames:
+        Status:
+          $ref: '#/components/schemas/Status'
+        Message:
+          $ref: '#/components/schemas/Message'
+        StatusCode:
+          description: '[References - API Status codes](#tag/References)'
+          example: 2000
+        ProviderNames:
           type: array
           description: List of provider names.
           items:
@@ -7681,9 +7725,15 @@ components:
         Message:
           $ref: '#/components/schemas/Message'
         VervotechId:
+          type: integer
+          format: int32
           description: Unique Id for the group of properties.
+          example: 16042757
         Count:
+          type: integer
+          format: int32
           description: Gives the count for the total provider hotels received.
+          example: 5
         StatusCode:
           description: '[References - API Status codes](#tag/References)'
           example: 2000
@@ -7756,7 +7806,8 @@ components:
           type: array
           description: List of Vervotech mapping ids
           items:
-            type: number
+            type: integer
+            format: int32
             example: 16558664
     Unica.Core.Contracts.Models.HotelsAPI.HotelMappingV3.CreateUnmappedProviderHotelsFileReq:
       type: object
@@ -8564,9 +8615,9 @@ components:
       description: Unmapped Hotel Content.
       properties:
         VervotechId:
-          type: number
+          type: string
           description: Vervotech Mappings hotel id for the hotel.
-          example: 16042757
+          example: '16042757'
         SupplierName:
           type: string
           description: Provider name.
@@ -8628,7 +8679,8 @@ components:
           description: The property's fax number.
           example: +1 323 555 1234
         StarRating:
-          type: float
+          type: number
+          format: float
           description: Information about the property’s rating.
           example: 5
         Website:
@@ -8691,7 +8743,8 @@ components:
       description: An individual property object.
       properties:
         VervotechId:
-          type: number
+          type: integer
+          format: int32
           description: Unique vervotechId for each property.
         Name:
           type: string
